@@ -7,10 +7,6 @@ page = requests.get(URL)
 soup = BeautifulSoup(page.text, "html.parser")
 print(soup.prettify())
 
-URL2 = "https://adservice.google.com/ddm/fls/z/dc_pre=CKubpN2Du-QCFQHDwAodBx0MWQ;src=6927552;type=jobse0;cat=viewj0;ord=1dk1v9dq5pbsj803;gtm=2od8l2;auiddc=*;u4=Quantitative%20Analyst;u5=New%20York%2C%20NY;u8=sponsored;~oref=https%3A%2F%2Fwww.indeed.com%2Fjobs%3Fq%3Ddata%2520scientist%2520%252420%252C000%26l%3DNew%2520York%26start%3D10%26advn%3D1804993680870938%26vjk%3D47322240d3271f44"
-page2 = requests.get(URL2)
-poop = BeautifulSoup(page2.text, "html.parser")
-print(poop.prettify())
 
 def extract_job_title_from_result(soup):
     jobs = []
@@ -82,8 +78,10 @@ def indeed_get_description(link):
     soup = BeautifulSoup(page.text, "html.parser")
     raw_descr = soup.find_all(name='div', attrs={'id': 'jobDescriptionText'})
 
-    pattern = re.compile('>.*?<')
-    pattern_list = pattern.findall(str(raw_descr))
-    output = ''.join([x.replace('>', '').replace('<', '') for x in pattern_list])
+    pattern = re.compile('(<.*?>)|(\\n)|[\[\]]')
+    return re.sub(pattern, '', str(raw_descr))
 
-    # TODO: This ALMOST works. Try again later to get all of the text (your regex sucks!)
+
+descrs = []
+for link in links:
+    descrs.append(indeed_get_description(link))
