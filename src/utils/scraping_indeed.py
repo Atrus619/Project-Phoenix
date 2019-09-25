@@ -3,16 +3,38 @@ from bs4 import BeautifulSoup
 import re
 
 
+def indeed_str_converter(yarn):
+    """
+    Within a string converts spaces to + and commas to %2C according to URL logic for indeed
+    :param yarn: STRING
+    :return: STRING
+    """
+    return yarn.replace(" ", "+").replace(",", "%2C")
+
+
 def build_url(job_title, location=None):
     """
     Generates a link to search indeed for a specific job title/location.
     Could add additional args.
     :param job_title: STRING
-    :param location: STRING
+    :param location: STRING (in the format of city, state; i.e. Boston, MA)
     :return: URL to use with requests.get
     """
-    # TODO: Jen, build this function!
-    pass
+    base_url = "http://indeed.com/jobs?q="
+    job_url = indeed_str_converter(job_title)
+    location_url = "&l=" + indeed_str_converter(location) if location is not None else ""
+    return base_url + job_url + location_url
+
+
+def build_url_page_n(url, n):
+    """
+    Generates a link to subsequent n number of pages for a specific job title/location.
+    :param url: STRING (comes from build_url)
+    :param n: NUM (n is the number of additional pages; n=1 brings you to the second page)
+    :return: URL to use with requests.get
+    """
+    additional_url = "&start=" + str(n*10)
+    return url + additional_url
 
 
 def get_soup(url):
