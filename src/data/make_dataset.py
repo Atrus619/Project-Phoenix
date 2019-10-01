@@ -10,6 +10,11 @@ def make_dataset(search_params, num_pages):
     :return: Nothing, adds extracted information to mongodb
     """
     # TODO: finish this function
-    for search_param in search_params:
-        pass
+    for job_title, location in search_params:
+        base_url = build_url(job_title=job_title, location=location)
+        for i in range(num_pages):
+            url = build_url_page_n(url=base_url, n=i)
+
+
+
     pass
