@@ -33,8 +33,10 @@ def build_url_page_n(url, n):
     :param n: NUM (n is the number of additional pages; n=1 brings you to the second page)
     :return: URL to use with requests.get
     """
-    additional_url = "&start=" + str(n*10)
-    return url + additional_url
+    if n > 0:
+        return url + "&start=" + str(n*10)
+    else:
+        return url
 
 
 def get_soup(url):
@@ -50,8 +52,13 @@ def get_soup(url):
 def extract_job_title_from_result(soup):
     jobs = []
     for div in soup.find_all(name="div", attrs={"class": "row"}):
+        temp_jobs = []
         for a in div.find_all(name="a", attrs={"data-tn-element": "jobTitle"}):
-            jobs.append(a["title"])
+            temp_jobs.append(a["title"])
+        if len(temp_jobs) == 0:
+            jobs.append(None)
+        else:
+            jobs.append("|".join(temp_jobs))
     return jobs
 
 
@@ -59,13 +66,18 @@ def extract_company_from_result(soup):
     companies = []
     for div in soup.find_all(name="div", attrs={"class": "row"}):
         company = div.find_all(name="span", attrs={"class": "company"})
+        temp_company = []
         if len(company) > 0:
             for b in company:
-                companies.append(b.text.strip())
+                temp_company.append(b.text.strip())
         else:
             sec_try = div.find_all(name="span", attrs={"class": "result - link - source"})
             for span in sec_try:
-                companies.append(span.text.strip())
+                temp_company.append(span.text.strip())
+        if len(temp_company) == 0:
+            companies.append(None)
+        else:
+            companies.append("|".join(temp_company))
     return companies
 
 
