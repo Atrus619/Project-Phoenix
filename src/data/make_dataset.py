@@ -1,4 +1,5 @@
 from src.utils.scraping_indeed import *
+from src.utils.db import *
 
 
 def make_dataset(search_params, num_pages):
@@ -9,12 +10,17 @@ def make_dataset(search_params, num_pages):
     :param num_pages: NUM
     :return: Nothing, adds extracted information to mongodb
     """
-    # TODO: finish this function
     for job_title, location in search_params:
         base_url = build_url(job_title=job_title, location=location)
         for i in range(num_pages):
             url = build_url_page_n(url=base_url, n=i)
+            soup = get_soup(url)
+            jobs = extract_job_title_from_result(soup)
+            companies = extract_company_from_result(soup)
+            locations = extract_location_from_result(soup)
+            links = extract_job_link_from_result(soup)
+            descrs = []
+            for link in links:
+                descrs.append(extract_description_from_link(link))
+            insert_data(jobs=jobs, companies=companies, locations=locations, descrs=descrs)
 
-
-
-    pass
