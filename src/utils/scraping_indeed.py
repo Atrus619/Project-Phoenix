@@ -83,13 +83,19 @@ def extract_company_from_result(soup):
 
 def extract_location_from_result(soup):
     locations = []
-    spans = soup.findAll("span", attrs={'class': 'location'})
-    for span in spans:
-        locations.append(span.text)
+    for div in soup.find_all(name="div", attrs={"class": "row"}):
+        location = div.find_all(name="span", attrs={"class": "location"})
+        if len(location) > 0:
+            for b in location:
+                locations.append(b.text.strip())
+        else:
+            sec_try = div.find_all(name="div", attrs={"class": "location"})
+            for c in sec_try:
+                locations.append(c.text.strip())
     return locations
 
 
-def indeed_get_job_links(soup):
+def extract_job_link_from_result(soup):
     """
     pull links to job posting from job search return on indeed.com
     :param soup: beautiful soup object from a search on indeed.com
@@ -102,7 +108,7 @@ def indeed_get_job_links(soup):
     return links
 
 
-def indeed_get_description(link):
+def extract_description_from_link(link):
     """
     Retrieves the full job description from an indeed job posting link
     :param link: indeed job posting link (excludes the indeed.com part)

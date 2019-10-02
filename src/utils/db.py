@@ -15,12 +15,12 @@ class Post(Document):
 
 def insert_data(jobs, companies, locations, descrs):
     num_posts = len(jobs)
-    # assert all(len(arg) == num_posts for arg in [jobs, companies, locations, descrs]), "all inputs same length"
+    assert all(len(arg) == num_posts for arg in [jobs, companies, locations, descrs]), "all inputs same length"
     connect(cfg.db)
     for i in range(num_posts):
         Post(
             job_title = jobs[i],
             company = companies[i],
-            # location = locations[i],
+            location = locations[i],
             description = descrs[i]
         ).save()
