@@ -40,11 +40,16 @@ print(companies)
 
 def extract_location_from_result(soup):
     locations = []
-    spans = soup.findAll("span", attrs={'class': 'location'})
-    for span in spans:
-        locations.append(span.text)
+    for div in soup.find_all(name="div", attrs={"class": "row"}):
+        location = div.find_all(name="span", attrs={"class": "location"})
+        if len(location) > 0:
+            for b in location:
+                locations.append(b.text.strip())
+        else:
+            sec_try = div.find_all(name="div", attrs={"class": "location"})
+            for c in sec_try:
+                locations.append(c.text.strip())
     return locations
-
 
 locations = extract_location_from_result(soup)
 print(locations)
@@ -85,3 +90,16 @@ def indeed_get_description(link):
 descrs = []
 for link in links:
     descrs.append(indeed_get_description(link))
+
+
+def print_div(n, soup):
+    """
+    Function prints div based on index number = n
+    :param n: NUMBER
+    :param soup: SOUP OBJECT
+    :return: prints div
+    """
+    for i, div in enumerate(soup.find_all(name="div", attrs={"class": "row"})):
+        if i == n:
+            print(div)
+            return
