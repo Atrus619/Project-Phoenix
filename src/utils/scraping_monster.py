@@ -12,7 +12,7 @@ def monster_str_converter(yarn):
     return yarn.replace(" ", "-").replace(",", "__2C")
 
 
-def build_monster_url(job_title, location=None):
+def build_url(job_title, location=None):
     """
     Generates a link to search indeed for a specific job title/location.
     Could add additional args.
@@ -27,7 +27,7 @@ def build_monster_url(job_title, location=None):
     return base_url + job_url + location_url + end_url
 
 
-def build_monster_url_page_n(url, n):
+def build_url_page_n(url, n):
     """
     Generates a link to subsequent n number of pages for a specific job title/location.
     :param url: STRING (comes from build_url)
@@ -50,7 +50,7 @@ def get_soup(url):
     return BeautifulSoup(page.text, "html.parser")
 
 
-def extract_company_from_result_monster(soup):
+def extract_company_from_result(soup):
     companies = []
     for div in soup.find_all(name="div", attrs={"class": "company"}):
         company = div.find_all(name="span", attrs={"class": "name"})
@@ -60,3 +60,44 @@ def extract_company_from_result_monster(soup):
         else:
             companies.append(None)
     return companies
+
+
+def extract_location_from_result(soup):
+    locations = []
+    for div in soup.find_all(name="div", attrs={"class": "location"}):
+        location = div.find_all(name="span", attrs={"class": "name"})
+        if len(location) > 0:
+            for b in location:
+                locations.append(b.text.strip())
+    return locations
+
+
+
+def extract_job_link_from_result(soup):
+    """
+    pull links to job posting from job search return on indeed.com
+    :param soup: beautiful soup object from a search on indeed.com
+    :return: list of links (strings)
+    """
+    links = []
+    for a in soup.find_all(name="h2", attrs={"class": "title"}):
+        pattern = 'href=".*?"'
+        temp_link = re.search(pattern, str(a))
+        pattern2 = '".*?"'
+        links.append(re.search(pattern2, temp_link.group()).group().replace('"', ""))
+    return links
+
+
+def extract_description_from_link(link):
+    """
+    Retrieves the full job description from an indeed job posting link
+    :param link: indeed job posting link (excludes the indeed.com part)
+    :return: text of full job description
+    """
+    url = link
+    page = requests.get(url)
+    soup = BeautifulSoup(page.text, "html.parser")
+    raw_descr = soup.find_all(name='div', attrs={'id': 'JobDescription'})
+
+    pattern = re.compile('(<.*?>)|(\\n)|[\[\]]|(\\r)')
+    return re.sub(pattern, '', str(raw_descr))
