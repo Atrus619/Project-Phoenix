@@ -1,6 +1,7 @@
 import requests
 from bs4 import BeautifulSoup
 import re
+import src.scraping.utils as su
 
 
 def indeed_str_converter(yarn):
@@ -98,14 +99,15 @@ def extract_job_link_from_result(soup):
     return links
 
 
-def extract_description_from_link(link):
+def extract_description_from_link(link, user_agent):
     """
     Retrieves the full job description from an indeed job posting link
     :param link: indeed job posting link (excludes the indeed.com part)
+    :param user_agent: User Agent to be used with the request
     :return: text of full job description
     """
     url = "https://www.indeed.com" + link
-    page = requests.get(url)
+    page = requests.get(url, headers={'User-Agent': user_agent})
     soup = BeautifulSoup(page.text, "html.parser")
     raw_descr = soup.find_all(name='div', attrs={'id': 'jobDescriptionText'})
 

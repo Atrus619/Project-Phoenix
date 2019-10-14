@@ -6,13 +6,14 @@ import random
 import time
 
 
-def get_soup(url):
+def get_soup(url, user_agent):
     """
     Helper function to construct a BeautifulSoup representation of a url.
     :param url: url returned from build_url
+    :param user_agent: User Agent to be used with the request
     :return: BeautifulSoup object parsed with html.parser
     """
-    page = requests.get(url)
+    page = requests.get(url, headers={'User-Agent': user_agent})
     return BeautifulSoup(page.text, "html.parser")
 
 
@@ -42,3 +43,8 @@ def change_ip(server_list):
 def random_pause(min_pause=2, max_pause=10):
     time.sleep(random.uniform(min_pause, max_pause))
     return
+
+
+def change_user_agent(user_agents):
+    # Moves the first user agent to the end of the list, so that the first item in the list can be used.
+    return user_agents.append(user_agents.pop(0))

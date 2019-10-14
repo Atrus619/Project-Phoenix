@@ -3,11 +3,11 @@ import src.scraping.scraping_monster as monster
 import src.db as db
 import src.scraping.utils as su
 from src.config import Config as cfg
+from src.constants import Constants as cs
 import random
 
 # https://www.scraperapi.com/blog/5-tips-for-web-scraping
-# TODO: Rotate between user agents
-# TODO: Set other request headers
+# TODO: Set other request headers  https://httpbin.org/anything
 # TODO: Set referer
 
 
@@ -39,19 +39,25 @@ def make_dataset(search_params, num_pages, source):
         extract_description_from_link = monster.extract_description_from_link
 
     # Build list of IPVanish Servers
-    server_list = su.build_ipvanish_server_list(cfg.ipvanish_base_links)
+    server_list = su.build_ipvanish_server_list(cs.ipvanish_base_links)
     random.shuffle(server_list)
+
+    # Import list of User Agents
+    user_agents = cs.user_agents
+    random.shuffle(user_agents)
 
     for job_title, location in search_params:
         base_url = build_url(job_title=job_title, location=location)
         pages = list(range(num_pages))
         for i in range(num_pages):
-            su.random_pause(min_pause=cfg.min_pause, max_pause=cfg.max_pause)
             page = pages.pop(pages.index(random.choice(pages)))  # Select pages in random order
 
             server_list = su.change_ip(server_list)  # Connect to VPN and change IP address
+            user_agents = su.change_user_agent(user_agents)  # Cycle through user agents
+            su.random_pause(min_pause=cfg.min_pause, max_pause=cfg.max_pause)  # Random wait time between requests
+
             url = build_url_page_n(url=base_url, n=page)  # Build url
-            soup = su.get_soup(url)  # Retrieve page from website
+            soup = su.get_soup(url=url, user_agent=user_agents[0])  # Retrieve page from website
 
             jobs = extract_job_title_from_result(soup)
             companies = extract_company_from_result(soup)
@@ -60,6 +66,7 @@ def make_dataset(search_params, num_pages, source):
             descrs = []
             for link in links:
                 su.random_pause(min_pause=cfg.min_pause, max_pause=cfg.max_pause)
-                descrs.append(extract_description_from_link(link))  # Hits the website, so pause is necessary in between each
+                user_agents = su.change_user_agent(user_agents)
+                descrs.append(extract_description_from_link(link=link, user_agent=user_agents[0]))  # Hits the website, so pause/user_agent change is necessary in between each
 
             db.insert_data(jobs=jobs, companies=companies, locations=locations, descrs=descrs, source=source)
