@@ -1,7 +1,9 @@
 import requests
 from bs4 import BeautifulSoup
 import re
+from src.constants import Constants as cs
 # TODO: add extract job title from result function!
+
 
 def monster_str_converter(yarn):
     """
@@ -94,8 +96,10 @@ def extract_description_from_link(link, user_agent):
     :param user_agent: User Agent to be used with the request
     :return: text of full job description
     """
+    headers = cs.base_request_headers
+    headers['User-Agent'] = user_agent
     url = link
-    page = requests.get(url, headers={'User-Agent': user_agent})
+    page = requests.get(url, headers=headers)
     soup = BeautifulSoup(page.text, "html.parser")
     raw_descr = soup.find_all(name='div', attrs={'id': 'JobDescription'})
 

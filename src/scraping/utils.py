@@ -4,6 +4,7 @@ import requests
 import os
 import random
 import time
+from src.constants import Constants as cs
 
 
 def get_soup(url, user_agent):
@@ -13,8 +14,10 @@ def get_soup(url, user_agent):
     :param user_agent: User Agent to be used with the request
     :return: BeautifulSoup object parsed with html.parser
     """
-    page = requests.get(url, headers={'User-Agent': user_agent})
-    return BeautifulSoup(page.text, "html.parser")
+    headers = cs.base_request_headers
+    headers['User-Agent'] = user_agent
+    page = requests.get(url, headers=headers)
+    return BeautifulSoup(page.text, 'html.parser')
 
 
 def build_ipvanish_server_list(base_links):

@@ -14,7 +14,7 @@ class Post(Document):
 
 def insert_data(jobs, companies, locations, descrs, source):
     num_posts = len(jobs)
-    assert all(len(arg) == num_posts for arg in [jobs, companies, locations, descrs]), "all inputs same length"
+    assert all(len(arg) == num_posts for arg in [jobs, companies, locations, descrs]), 'all inputs same length'
     connect(cfg.db)
     for i in range(num_posts):
         Post(

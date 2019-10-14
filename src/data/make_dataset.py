@@ -6,12 +6,8 @@ from src.config import Config as cfg
 from src.constants import Constants as cs
 import random
 
-# https://www.scraperapi.com/blog/5-tips-for-web-scraping
-# TODO: Set other request headers  https://httpbin.org/anything
-# TODO: Set referer
 
-
-def make_dataset(search_params, num_pages, source):
+def make_dataset(search_params=cfg.search_params, num_pages=cfg.num_pages, source=cfg.source):
     """
     Accepts arguments describing the search parameters (probably a list of tuples of arguments for build_url)
     Pulls information from indeed, parses it into meaningful components, and inserts this information to mongodb
