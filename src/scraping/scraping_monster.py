@@ -1,7 +1,7 @@
 import requests
 from bs4 import BeautifulSoup
 import re
-
+# TODO: add extract job title from result function!
 
 def monster_str_converter(yarn):
     """
@@ -70,7 +70,6 @@ def extract_location_from_result(soup):
             for b in location:
                 locations.append(b.text.strip())
     return locations
-
 
 
 def extract_job_link_from_result(soup):
