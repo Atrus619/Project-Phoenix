@@ -39,16 +39,6 @@ def build_url_page_n(url, n):
         return url
 
 
-def get_soup(url):
-    """
-    Helper function to construct a BeautifulSoup representation of a url.
-    :param url: url returned from build_url
-    :return: BeautifulSoup object parsed with html.parser
-    """
-    page = requests.get(url)
-    return BeautifulSoup(page.text, "html.parser")
-
-
 def extract_job_title_from_result(soup):
     jobs = []
     for div in soup.find_all(name="div", attrs={"class": "row"}):

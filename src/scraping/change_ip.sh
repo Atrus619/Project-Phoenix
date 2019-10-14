@@ -1,10 +1,9 @@
 #!/bin/bash
 
-# First argument is old server
-# Second argument is new server
+# First argument is new server
 vpn=IPVanish
 
-sudo sed -i -e "s/$1/$2/g" /etc/NetworkManager/system-connections/$vpn
+sudo sed -i -e "s/gateway=.*/gateway=$1/g" /etc/NetworkManager/system-connections/$vpn
 sudo service network-manager restart
 
 while true; do
