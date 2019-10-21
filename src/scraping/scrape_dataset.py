@@ -13,13 +13,15 @@ import requests
 import time
 
 
-def scrape_dataset(search_params=cfg.search_params, num_pages=cfg.num_pages, source=cfg.source):
+def scrape_dataset(search_params=cfg.search_params, num_pages=cfg.num_pages, source=cfg.source, fail_wait_time=cfg.fail_wait_time, max_retry_attempts=cfg.max_retry_attempts):
     """
     Accepts arguments describing the search parameters (probably a list of tuples of arguments for build_url)
     Pulls information from indeed, parses it into meaningful components, and inserts this information to mongodb
     :param search_params: LIST OF TUPLES (job title, location)
     :param num_pages: NUM
     :param source: STRING name of website to pull links from (either indeed or monster as of now)
+    :param fail_wait_time: NUMBER (in seconds) number of seconds to wait in between failed attempts at pulling a page
+    :param max_retry_attempts: NUMBER Total number of times to attempt pulling a page before skipping
     :return: Nothing, adds extracted information to mongodb
     """
     # Initialize logger
@@ -80,6 +82,7 @@ def scrape_dataset(search_params=cfg.search_params, num_pages=cfg.num_pages, sou
         logger.info('Beginning scrape for a ' + job_title + ' in ' + location + '. Total time elapsed: ' + su.get_pretty_time(loop_time - start_time) + '.')
 
         for i in range(num_pages):
+            skip_page = False
             page = pages.pop(pages.index(random.choice(pages))) + 1  # Select pages in random order
 
             rotate_ip()  # Connect to VPN and change IP address
@@ -87,13 +90,32 @@ def scrape_dataset(search_params=cfg.search_params, num_pages=cfg.num_pages, sou
             su.random_pause(min_pause=cfg.min_pause, max_pause=cfg.max_pause)  # Random wait time between requests
 
             # Log request
-            logger.info('Using VPN ' + server_list[-1] + ' for page ' + str(page) + '...')
+            logger.info('Using VPN ' + server_list[-1] + ' for page ' + str(page) + ' for a/an ' + job_title + ' in ' + location + ' from ' + source + '...')
             page_time = time.time()
 
             url = build_url_page_n(url=base_url, n=page)  # Build url
 
             with requests.Session() as session:
-                soup = su.get_soup(session=session, url=url, user_agent=user_agents[0], logger=logger)  # Retrieve page from website
+                k = 1
+                while 1:
+                    try:
+                        soup = su.get_soup(session=session, url=url, user_agent=user_agents[0], logger=logger)  # Retrieve page from website
+                        break
+                    except requests.exceptions.ConnectionError:
+                        if k > max_retry_attempts:
+                            logger.exception('Maximum number of retry attempts exceeded. Moving on to next page...')
+                            skip_page = True
+                            break
+                        else:
+                            k += 1
+                            logger.exception('Error accessing page ' + str(page) + ' for a/an ' + job_title + ' in ' + location + ' from ' + source + '. Retrying after ' + \
+                                             'waiting for ' + fail_wait_time + '. Attempt ' + k + ' / ' + max_retry_attempts + '.')
+                            time.sleep(fail_wait_time)
+
+                if skip_page:
+                    continue
+                else:
+                    pass
 
                 jobs = extract_job_title_from_result(soup)
                 companies = extract_company_from_result(soup)
@@ -108,7 +130,7 @@ def scrape_dataset(search_params=cfg.search_params, num_pages=cfg.num_pages, sou
                     try:
                         descrs.append(extract_description_html_from_link(session=session, link=link, user_agent=user_agents[0], og_page_url=url, logger=logger))
                     except (requests.exceptions.SSLError, requests.exceptions.ConnectionError):
-                        logger.exception('Error extracting job description link from ' + companies[j] + "'s posting for a " + jobs[j] + ' in ' + locations[j] + \
+                        logger.exception('Error extracting job description link from ' + companies[j] + "'s posting for a/an " + jobs[j] + ' in ' + locations[j] + \
                                          '. Link: ' + link)
                         descrs.append(cfg.job_description_link_fail_msg)
 

@@ -25,6 +25,7 @@ def insert_data(jobs, companies, locations, descrs, source):
             location=locations[i],
             description=descrs[i],
             source=source
+            # Date is automatically inserted based on current timestamp
         ).save()
 
 

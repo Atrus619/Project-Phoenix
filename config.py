@@ -20,6 +20,7 @@ class Config:
     min_pause = 0.5  # in seconds
     max_pause = 2
 
+    # TODO: Expand list to do our daily work
     search_params = [
         ('Data Scientist', 'Chicago, IL'),
         ('Data Scientist', 'New York, NY'),
@@ -37,3 +38,6 @@ class Config:
     scrape_log_name = 'scrape_log'
 
     job_description_link_fail_msg = 'Job description unavailable'
+
+    fail_wait_time = 60  # seconds
+    max_retry_attempts = 3  # attempts
