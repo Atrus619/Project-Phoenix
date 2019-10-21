@@ -107,3 +107,16 @@ def extract_description_from_link(link, user_agent, og_page_url):
 
     pattern = re.compile('(<.*?>)|(\\n)|[\[\]]|(\\r)')
     return re.sub(pattern, '', str(raw_descr))
+
+
+def extract_job_title_from_result(soup):
+    jobs = []
+    for h2 in soup.find_all(name="h2", attrs={"class": "title"}):
+        temp_jobs = []
+        for a in h2.find_all(name="a"):
+            temp_jobs.append(a.text)
+        if len(temp_jobs) == 0:
+            jobs.append(None)
+        else:
+            jobs.append("|".join(temp_jobs))
+    return jobs
