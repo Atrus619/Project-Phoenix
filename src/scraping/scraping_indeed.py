@@ -107,8 +107,7 @@ def extract_description_from_link(link, user_agent, og_page_url):
     :param og_page_url: Original page URL from which we are grabbing this job link. Replaces google.com as referer.
     :return: text of full job description
     """
-    # TODO: There are cases when our original strategy does not work
-    # TODO: Always get raw data, sometimes get the raw text
+    # TODO: There are cases when our original strategy does not work. Come back here for parsing the text once we have it stored in mongodb
     headers = cs.base_request_headers
     headers['User-Agent'] = user_agent
     headers['Referer'] = og_page_url
@@ -122,3 +121,19 @@ def extract_description_from_link(link, user_agent, og_page_url):
         return re.sub(pattern, '', str(raw_descr))
     else:
         return 'SECOND TRY, RETURNING RAW HTML: ' + page.text
+
+
+def extract_description_html_from_link(link, user_agent, og_page_url):
+    """
+    Retrieves full html from an indeed job posting link. Extracting the job description specifically varies too much from company website to website.
+    :param link: indeed job posting link (excludes the indeed.com part)
+    :param user_agent: User Agent to be used with the request
+    :param og_page_url: Original page URL from which we are grabbing this job link. Replaces google.com as referer.
+    :return: html of entire page
+    """
+    headers = cs.base_request_headers
+    headers['User-Agent'] = user_agent
+    headers['Referer'] = og_page_url
+    url = "https://www.indeed.com" + link
+    page = requests.get(url, headers=headers)
+    return page.text
