@@ -12,15 +12,6 @@ import pprint
 import requests
 
 
-# TODO: Add logging!
-# TODO: Error with:
-#  requests.exceptions.ConnectionError: HTTPSConnectionPool(host='careers.norc.org', port=443):
-#  Max retries exceeded with url: /cw/en-us/job/495395/data-scientist
-#  (Caused by NewConnectionError('<urllib3.connection.VerifiedHTTPSConnection object at 0x7f6594a5fe10>:
-#  Failed to establish a new connection: [Errno 101] Network is unreachable'))
-# I THINK I CRASHED MY ROUTER?!?!?!
-
-
 def scrape_dataset(search_params=cfg.search_params, num_pages=cfg.num_pages, source=cfg.source):
     """
     Accepts arguments describing the search parameters (probably a list of tuples of arguments for build_url)
@@ -45,7 +36,7 @@ def scrape_dataset(search_params=cfg.search_params, num_pages=cfg.num_pages, sou
     def rotate_ip():
         """
         Changes IP to the first server in the list and moves the first item in the list to the end
-        :param server_list: List of IP Vanish servers
+        :requires: server_list: List of IP Vanish servers (modifies external object in place)
         :return: Updated server list
         """
         while os.system('echo %s|sudo -S %s' % (cfg.sudo_password, './src/scraping/change_ip.sh ' + server_list[0])) != 0:
@@ -61,7 +52,7 @@ def scrape_dataset(search_params=cfg.search_params, num_pages=cfg.num_pages, sou
         extract_company_from_result = indeed.extract_company_from_result
         extract_location_from_result = indeed.extract_location_from_result
         extract_job_link_from_result = indeed.extract_job_link_from_result
-        extract_description_from_link = indeed.extract_description_from_link
+        extract_description_html_from_link = indeed.extract_description_html_from_link
     else:  # monster
         build_url = monster.build_url
         build_url_page_n = monster.build_url_page_n
@@ -69,7 +60,7 @@ def scrape_dataset(search_params=cfg.search_params, num_pages=cfg.num_pages, sou
         extract_company_from_result = monster.extract_company_from_result
         extract_location_from_result = monster.extract_location_from_result
         extract_job_link_from_result = monster.extract_job_link_from_result
-        extract_description_from_link = monster.extract_description_from_link
+        extract_description_html_from_link = monster.extract_description_html_from_link
 
     # Build list of IPVanish Servers
     server_list = su.build_ipvanish_server_list(cs.ipvanish_base_links)
@@ -109,11 +100,10 @@ def scrape_dataset(search_params=cfg.search_params, num_pages=cfg.num_pages, sou
                 # Hits the website, so pause/user_agent change is necessary in between each
                 # Can fail if website link has issues
                 try:
-                    descrs.append(extract_description_from_link(link=link, user_agent=user_agents[0], og_page_url=url))
+                    descrs.append(extract_description_html_from_link(link=link, user_agent=user_agents[0], og_page_url=url))
                 except (requests.exceptions.SSLError, requests.exceptions.ConnectionError):
                     # TODO: CHECK THIS ERROR
-                    import pdb;
-                    pdb.set_trace()
+                    import pdb; pdb.set_trace()
                     logger.exception('Error extracting job description link from ' + companies[j] + "'s posting for a " + jobs[j] + ' in ' + location[j] + \
                                      '. Link: ' + link)
                     descrs.append(cfg.job_description_link_fail_msg)

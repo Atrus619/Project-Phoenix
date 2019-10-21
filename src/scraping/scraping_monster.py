@@ -89,6 +89,19 @@ def extract_job_link_from_result(soup):
     return links
 
 
+def extract_job_title_from_result(soup):
+    jobs = []
+    for h2 in soup.find_all(name="h2", attrs={"class": "title"}):
+        temp_jobs = []
+        for a in h2.find_all(name="a"):
+            temp_jobs.append(a.text)
+        if len(temp_jobs) == 0:
+            jobs.append(None)
+        else:
+            jobs.append("|".join(temp_jobs))
+    return jobs
+
+
 def extract_description_from_link(link, user_agent, og_page_url):
     """
     Retrieves the full job description from an indeed job posting link
@@ -109,14 +122,17 @@ def extract_description_from_link(link, user_agent, og_page_url):
     return re.sub(pattern, '', str(raw_descr))
 
 
-def extract_job_title_from_result(soup):
-    jobs = []
-    for h2 in soup.find_all(name="h2", attrs={"class": "title"}):
-        temp_jobs = []
-        for a in h2.find_all(name="a"):
-            temp_jobs.append(a.text)
-        if len(temp_jobs) == 0:
-            jobs.append(None)
-        else:
-            jobs.append("|".join(temp_jobs))
-    return jobs
+def extract_description_html_from_link(link, user_agent, og_page_url):
+    """
+    Retrieves full html from a monster job posting link. Extracting the job description specifically varies too much from company website to website.
+    :param link: indeed job posting link (excludes the indeed.com part)
+    :param user_agent: User Agent to be used with the request
+    :param og_page_url: Original page URL from which we are grabbing this job link. Replaces google.com as referer.
+    :return: html of entire page
+    """
+    headers = cs.base_request_headers
+    headers['User-Agent'] = user_agent
+    headers['Referer'] = og_page_url
+    url = link  # lol.
+    page = requests.get(url, headers=headers)
+    return page.text
