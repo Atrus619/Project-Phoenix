@@ -24,3 +24,5 @@ class Constants:
         'Accept-Encoding': 'gzip, deflate, br',
         'Referer': 'https://google.com'
     }
+
+    page_break = '---------------------------------------------------------------------------------------'

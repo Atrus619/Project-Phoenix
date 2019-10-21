@@ -10,6 +10,7 @@ import logging
 from datetime import date
 import pprint
 import requests
+import time
 
 
 def scrape_dataset(search_params=cfg.search_params, num_pages=cfg.num_pages, source=cfg.source):
@@ -27,6 +28,7 @@ def scrape_dataset(search_params=cfg.search_params, num_pages=cfg.num_pages, sou
     logger.info('Successfully initialized logger. Beginning scraping on ' + str(date.today()) + ' for ' + str(num_pages) + \
                 ' pages each of ' + str(len(search_params)) + ' jobs from ' + source + '.')
     logger.info('Search Parameters:\n' + pprint.pformat(search_params))
+    start_time = time.time()
 
     # Define helper functions
     def rotate_user_agent():
@@ -73,6 +75,10 @@ def scrape_dataset(search_params=cfg.search_params, num_pages=cfg.num_pages, sou
     for job_title, location in search_params:
         base_url = build_url(job_title=job_title, location=location)
         pages = list(range(num_pages))
+
+        loop_time = time.time()
+        logger.info('Beginning scrape for a ' + job_title + ' in ' + location + '. Total time elapsed: ' + su.get_pretty_time(loop_time - start_time) + '.')
+
         for i in range(num_pages):
             page = pages.pop(pages.index(random.choice(pages))) + 1  # Select pages in random order
 
@@ -81,32 +87,38 @@ def scrape_dataset(search_params=cfg.search_params, num_pages=cfg.num_pages, sou
             su.random_pause(min_pause=cfg.min_pause, max_pause=cfg.max_pause)  # Random wait time between requests
 
             # Log request
-            logger.info('VPN: ' + server_list[-1] + '\tUser Agent: ' + user_agents[-1] + '\tJob: ' + job_title + '\tLocation: ' + location + '\tPage: ' + str(page))
+            logger.info('Using VPN ' + server_list[-1] + ' for page ' + str(page) + '...')
+            page_time = time.time()
 
             url = build_url_page_n(url=base_url, n=page)  # Build url
-            soup = su.get_soup(url=url, user_agent=user_agents[0])  # Retrieve page from website
 
-            jobs = extract_job_title_from_result(soup)
-            companies = extract_company_from_result(soup)
-            locations = extract_location_from_result(soup)
-            links = extract_job_link_from_result(soup)
-            descrs = []
+            with requests.Session() as session:
+                soup = su.get_soup(session=session, url=url, user_agent=user_agents[0], logger=logger)  # Retrieve page from website
 
-            logger.info('Extracting job links from ' + str(len(links)) + ' jobs.')
-            for j, link in enumerate(links):
-                su.random_pause(min_pause=cfg.min_pause, max_pause=cfg.max_pause)
-                rotate_user_agent()
+                jobs = extract_job_title_from_result(soup)
+                companies = extract_company_from_result(soup)
+                locations = extract_location_from_result(soup)
+                links = extract_job_link_from_result(soup)
+                descrs = []
 
-                # Hits the website, so pause/user_agent change is necessary in between each
-                # Can fail if website link has issues
-                try:
-                    descrs.append(extract_description_html_from_link(link=link, user_agent=user_agents[0], og_page_url=url))
-                except (requests.exceptions.SSLError, requests.exceptions.ConnectionError):
-                    # TODO: CHECK THIS ERROR
-                    import pdb; pdb.set_trace()
-                    logger.exception('Error extracting job description link from ' + companies[j] + "'s posting for a " + jobs[j] + ' in ' + location[j] + \
-                                     '. Link: ' + link)
-                    descrs.append(cfg.job_description_link_fail_msg)
+                logger.info('Extracting job links and descriptions from ' + str(len(links)) + ' jobs...')
+                for j, link in enumerate(links):
+                    su.random_pause(min_pause=cfg.min_pause, max_pause=cfg.max_pause)
 
-            logger.info('Scraping complete. Inserting data into MongoDB.')
+                    try:
+                        descrs.append(extract_description_html_from_link(session=session, link=link, user_agent=user_agents[0], og_page_url=url, logger=logger))
+                    except (requests.exceptions.SSLError, requests.exceptions.ConnectionError):
+                        logger.exception('Error extracting job description link from ' + companies[j] + "'s posting for a " + jobs[j] + ' in ' + locations[j] + \
+                                         '. Link: ' + link)
+                        descrs.append(cfg.job_description_link_fail_msg)
+
+            logger.info('Scraping for current page complete. Elapsed time for page: ' + su.get_pretty_time(time.time() - page_time) + '.')
+            logger.info('Inserting data into MongoDB...')
+
             db.insert_data(jobs=jobs, companies=companies, locations=locations, descrs=descrs, source=source)
+
+        logger.info('Scraping for all pages for job/loc combo complete. Elapsed time for job/loc: ' + \
+                    su.get_pretty_time(time.time() - loop_time) + '.')
+        logger.info(cs.page_break)
+
+    logger.info('Scraping complete. Total elapsed time: ' + su.get_pretty_time(time.time() - start_time) + '.')
