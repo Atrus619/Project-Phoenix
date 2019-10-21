@@ -11,10 +11,11 @@ except ModuleNotFoundError:
 
 class Config:
     db = 'phoenixdb'
-    collection = 'scraped_data'
+    collection = 'post'
 
-    # IP Vanish Parameters
+    # Secrets
     ipvanish_password = os.environ.get('ipvanish_password') or 'you-will-never-guess'
+    sudo_password = os.environ.get('sudo_password') or 'good-luck'
 
     min_pause = 2  # in seconds
     max_pause = 10
@@ -31,3 +32,8 @@ class Config:
     num_pages = 10
 
     source = 'indeed'
+
+    log_folder = 'logs'
+    scrape_log_name = 'scrape_log'
+
+    job_description_link_fail_msg = 'Job description unavailable'

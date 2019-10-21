@@ -99,19 +99,26 @@ def extract_job_link_from_result(soup):
     return links
 
 
-def extract_description_from_link(link, user_agent):
+def extract_description_from_link(link, user_agent, og_page_url):
     """
     Retrieves the full job description from an indeed job posting link
     :param link: indeed job posting link (excludes the indeed.com part)
     :param user_agent: User Agent to be used with the request
+    :param og_page_url: Original page URL from which we are grabbing this job link. Replaces google.com as referer.
     :return: text of full job description
     """
+    # TODO: There are cases when our original strategy does not work
+    # TODO: Always get raw data, sometimes get the raw text
     headers = cs.base_request_headers
     headers['User-Agent'] = user_agent
+    headers['Referer'] = og_page_url
     url = "https://www.indeed.com" + link
     page = requests.get(url, headers=headers)
     soup = BeautifulSoup(page.text, "html.parser")
     raw_descr = soup.find_all(name='div', attrs={'id': 'jobDescriptionText'})
-
     pattern = re.compile('(<.*?>)|(\\n)|[\[\]]')
-    return re.sub(pattern, '', str(raw_descr))
+
+    if len(raw_descr) > 0:
+        return re.sub(pattern, '', str(raw_descr))
+    else:
+        return 'SECOND TRY, RETURNING RAW HTML: ' + page.text
