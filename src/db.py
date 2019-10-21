@@ -1,6 +1,8 @@
 from mongoengine import *
-from src.config import Config as cfg
+from config import Config as cfg
 import datetime
+import pymongo
+import pandas as pd
 
 
 class Post(Document):
@@ -24,3 +26,14 @@ def insert_data(jobs, companies, locations, descrs, source):
             description=descrs[i],
             source=source
         ).save()
+
+
+def get_data():
+    # Returns a pandas dataframe of the entire posts data set
+    client = pymongo.MongoClient()
+    db = client[cfg.db]
+    posts = db[cfg.collection]
+    df = pd.DataFrame(columns=posts.find_one().keys())
+    for i, post in enumerate(posts.find()):
+        df = df.append(pd.DataFrame(post, index=[i]))
+    return df
