@@ -17,8 +17,8 @@ class Config:
     ipvanish_password = os.environ.get('ipvanish_password') or 'you-will-never-guess'
     sudo_password = os.environ.get('sudo_password') or 'good-luck'
 
-    min_pause = 2  # in seconds
-    max_pause = 10
+    min_pause = 0.5  # in seconds
+    max_pause = 2
 
     search_params = [
         ('Data Scientist', 'Chicago, IL'),
