@@ -28,3 +28,10 @@ class Constants:
     }
 
     page_break = '---------------------------------------------------------------------------------------'
+
+    skills = {
+        "Math": "Math",
+        "Computer Science": "Computer Science",
+        "Microsoft Office": "Microsoft Office",
+        "Singing": "Singing"
+    }
