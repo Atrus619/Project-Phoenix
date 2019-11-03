@@ -1,6 +1,5 @@
 import re
 from bs4 import BeautifulSoup
-import requests
 import random
 import time
 from src.constants import Constants as cs
@@ -49,7 +48,7 @@ def random_pause(min_pause=2, max_pause=10):
     return
 
 
-def setup_scrape_logger(name, filename='scrape_log', level=logging.INFO):
+def setup_scrape_logger(name, filename, level=logging.INFO):
     log_setup = logging.getLogger(name)
 
     log_dir = os.path.join(cfg.log_folder, 'scraping')
@@ -67,7 +66,6 @@ def setup_scrape_logger(name, filename='scrape_log', level=logging.INFO):
     log_setup.setLevel(level)
     log_setup.addHandler(fileHandler)
     log_setup.addHandler(consoleHandler)
-
 
 
 def get_search_params(config):
