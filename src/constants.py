@@ -1,11 +1,13 @@
 class Constants:
     # List of IP Vanish servers: https://account.ipvanish.com/index.php?t=Server%20List
+    # TODO: Jen: Expand list later
     ipvanish_base_links = [
         ('iad-a01.ipvanish.com', 70),
         ('jnb-c01.ipvanish.com', 7)
     ]
 
     # List of user agents: https://developers.whatismybrowser.com/useragents/explore/
+    # TODO: Jen: Expand list later
     user_agents = [
         'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.36',
         'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.121 Safari/537.36',
@@ -23,4 +25,13 @@ class Constants:
         'Accept-Language': 'en-US,en;q=0.9',
         'Accept-Encoding': 'gzip, deflate, br',
         'Referer': 'https://google.com'
+    }
+
+    page_break = '---------------------------------------------------------------------------------------'
+
+    skills = {
+        "Math": "Math",
+        "Computer Science": "Computer Science",
+        "Microsoft Office": "Microsoft Office",
+        "Singing": "Singing"
     }

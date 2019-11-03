@@ -19,8 +19,9 @@ class Config:
     ipvanish_password = os.environ.get('ipvanish_password') or 'you-will-never-guess'
     sudo_password = os.environ.get('sudo_password') or 'good-luck'
 
-    min_pause = 2  # in seconds
-    max_pause = 10
+    min_pause = 0.5  # in seconds
+    max_pause = 2
+
 
     jobs = [
         "machine learning engineer",
@@ -44,3 +45,6 @@ class Config:
     scrape_log_name = 'scrape_log'
 
     job_description_link_fail_msg = 'Job description unavailable'
+
+    fail_wait_time = 60  # seconds
+    max_retry_attempts = 3  # attempts
