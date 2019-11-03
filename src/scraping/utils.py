@@ -10,17 +10,25 @@ from config import Config as cfg
 from datetime import date
 
 
-def get_soup(url, user_agent):
+def get_soup(session, url, user_agent, logger):
     """
     Helper function to construct a BeautifulSoup representation of a url.
+    :param session: requests session object
     :param url: url returned from build_url
     :param user_agent: User Agent to be used with the request
     :return: BeautifulSoup object parsed with html.parser
     """
     headers = cs.base_request_headers
     headers['User-Agent'] = user_agent
-    page = requests.get(url, headers=headers)
+
+    page = custom_get(session=session, url=url, headers=headers, logger=logger)
+
     return BeautifulSoup(page.text, 'html.parser')
+
+
+def custom_get(session, url, headers, logger):
+    page = session.get(url, headers=headers)
+    return page
 
 
 def build_ipvanish_server_list(base_links):
@@ -61,10 +69,21 @@ def setup_scrape_logger(name, filename='scrape_log', level=logging.INFO):
     log_setup.addHandler(consoleHandler)
 
 
+
 def get_search_params(config):
     search_params = []
     for job in config.jobs:
         for city in config.cities:
             search_params.append((job, city))
     return search_params
+
+
+def get_pretty_time(duration, num_digits=2):
+    # Duration is assumed to be in seconds. Returns a string with the appropriate suffix (s/m/h)
+    if duration > 60**2:
+        return str(round(duration / 60**2, num_digits)) + 'h'
+    if duration > 60:
+        return str(round(duration / 60, num_digits)) + 'm'
+    else:
+        return str(round(duration, num_digits)) + 's'
 

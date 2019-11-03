@@ -9,6 +9,5 @@ os.system('echo %s|sudo -S %s' % (cfg.sudo_password, 'mongod --fork --logpath /v
 # Scrape Indeed
 scrape_dataset(search_params=su.get_search_params(config=cfg), num_pages=cfg.num_pages, source='indeed')
 
-# TODO: Scrape Monster
-
-# TODO: Scrape Others??
+# Scrape Monster
+scrape_dataset(search_params=cfg.search_params, num_pages=cfg.num_pages, source='monster')

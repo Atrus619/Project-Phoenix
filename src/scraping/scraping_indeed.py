@@ -2,6 +2,7 @@ import requests
 from bs4 import BeautifulSoup
 import re
 from src.constants import Constants as cs
+import src.scraping.utils as su
 
 
 def indeed_str_converter(yarn):
@@ -123,9 +124,10 @@ def extract_description_from_link(link, user_agent, og_page_url):
         return 'SECOND TRY, RETURNING RAW HTML: ' + page.text
 
 
-def extract_description_html_from_link(link, user_agent, og_page_url):
+def extract_description_html_from_link(session, link, user_agent, og_page_url, logger):
     """
     Retrieves full html from an indeed job posting link. Extracting the job description specifically varies too much from company website to website.
+    :param session: requests.session object
     :param link: indeed job posting link (excludes the indeed.com part)
     :param user_agent: User Agent to be used with the request
     :param og_page_url: Original page URL from which we are grabbing this job link. Replaces google.com as referer.
@@ -135,5 +137,5 @@ def extract_description_html_from_link(link, user_agent, og_page_url):
     headers['User-Agent'] = user_agent
     headers['Referer'] = og_page_url
     url = "https://www.indeed.com" + link
-    page = requests.get(url, headers=headers)
+    page = su.custom_get(session=session, url=url, headers=headers, logger=logger)
     return page.text
