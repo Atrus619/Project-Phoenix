@@ -12,7 +12,7 @@ import pprint
 import requests
 
 
-def scrape_dataset(search_params=cfg.search_params, num_pages=cfg.num_pages, source=cfg.source):
+def scrape_dataset(search_params=su.get_search_params(config=cfg), num_pages=cfg.num_pages, source=cfg.source):
     """
     Accepts arguments describing the search parameters (probably a list of tuples of arguments for build_url)
     Pulls information from indeed, parses it into meaningful components, and inserts this information to mongodb
@@ -76,7 +76,7 @@ def scrape_dataset(search_params=cfg.search_params, num_pages=cfg.num_pages, sou
         for i in range(num_pages):
             page = pages.pop(pages.index(random.choice(pages))) + 1  # Select pages in random order
 
-            rotate_ip()  # Connect to VPN and change IP address
+            # rotate_ip()  # Connect to VPN and change IP address
             rotate_user_agent()  # Cycle through user agents
             su.random_pause(min_pause=cfg.min_pause, max_pause=cfg.max_pause)  # Random wait time between requests
 

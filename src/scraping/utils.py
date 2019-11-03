@@ -59,3 +59,12 @@ def setup_scrape_logger(name, filename='scrape_log', level=logging.INFO):
     log_setup.setLevel(level)
     log_setup.addHandler(fileHandler)
     log_setup.addHandler(consoleHandler)
+
+
+def get_search_params(config):
+    search_params = []
+    for job in config.jobs:
+        for city in config.cities:
+            search_params.append((job, city))
+    return search_params
+

@@ -1,8 +1,10 @@
 import os
+
 basedir = os.path.abspath(os.path.dirname(__file__))
 
 try:
     from dotenv import load_dotenv
+
     load_dotenv(os.path.join(basedir, '.env'))
 
 except ModuleNotFoundError:
@@ -20,16 +22,21 @@ class Config:
     min_pause = 2  # in seconds
     max_pause = 10
 
-    search_params = [
-        ('Data Scientist', 'Chicago, IL'),
-        ('Data Scientist', 'New York, NY'),
-        ('Data Scientist', 'San Francisco, CA'),
-        ('Actuary', 'Chicago, IL'),
-        ('Actuary', 'New York, NY'),
-        ('Actuary', 'San Francisco, CA')
+    jobs = [
+        "machine learning engineer",
+        "product development",
+        "data scientist",
+        "strategy and operations",
+        "AI scientist"
+    ]
+    cities = [
+        "Chicago, IL",
+        "New York, NY",
+        "San Francisco, CA"
     ]
 
-    num_pages = 10
+
+    num_pages = 2
 
     source = 'indeed'
 
