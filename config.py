@@ -22,7 +22,6 @@ class Config:
     min_pause = 0.5  # in seconds
     max_pause = 2
 
-
     jobs = [
         "machine learning engineer",
         "product development",
@@ -30,19 +29,23 @@ class Config:
         "strategy and operations",
         "AI scientist"
     ]
+
     cities = [
         "Chicago, IL",
         "New York, NY",
-        "San Francisco, CA"
+        "San Francisco, CA",
+        "Boston, MA",
+        "Denver, CO",
+        "San Diego, CA"
     ]
 
+    num_pages = 5
 
-    num_pages = 2
-
-    source = 'indeed'
+    sources = ['indeed', 'monster']
 
     log_folder = 'logs'
     scrape_log_name = 'scrape_log'
+    scrape_error_log_name = 'scrape_error_log'
 
     job_description_link_fail_msg = 'Job description unavailable'
 
