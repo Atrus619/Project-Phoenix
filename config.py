@@ -39,9 +39,10 @@ class Config:
         "San Diego, CA"
     ]
 
-    num_pages = 5
-
-    sources = ['indeed', 'monster']
+    sources = {
+        'indeed': 5,
+        'monster': 2
+    }
 
     log_folder = 'logs'
     scrape_log_name = 'scrape_log'

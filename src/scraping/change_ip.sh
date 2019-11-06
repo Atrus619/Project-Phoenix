@@ -22,6 +22,7 @@ while true; do
     fi
   else
     echo "Network Manager not initialized yet for $1. Retrying in 5..."
-    sleep 5
+    service network-manager restart
+    sleep 10
   fi
 done
