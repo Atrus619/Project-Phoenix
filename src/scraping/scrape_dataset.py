@@ -103,10 +103,11 @@ def scrape_dataset(search_params, num_pages, source):
                     try:
                         soup = su.get_soup(session=session, url=url, user_agent=user_agents[0], logger=logger)  # Retrieve page from website
                         break
-                    except requests.exceptions.ConnectionError:
+                    except requests.exceptions.ConnectionError as e:
                         if k > cfg.max_retry_attempts:
                             error_logger.exception('Maximum number of retry attempts exceeded. Moving on to next page...')
                             skip_page = True
+                            db.insert_error(job_title=job_title, location=location, page=page, error=e, source=source)
                             break
                         else:
                             k += 1
@@ -132,10 +133,11 @@ def scrape_dataset(search_params, num_pages, source):
 
                     try:
                         descrs.append(extract_description_html_from_link(session=session, link=link, user_agent=user_agents[0], og_page_url=url, logger=logger))
-                    except (requests.exceptions.SSLError, requests.exceptions.ConnectionError):
+                    except (requests.exceptions.SSLError, requests.exceptions.ConnectionError) as e:
                         error_logger.exception(f"Error extracting job description link from {companies[j]}'s posting for a/an {jobs[j]} in {locations[j]}"
                                                f'. Link: {link}')
                         descrs.append(cfg.job_description_link_fail_msg)
+                        db.insert_error(job_title=jobs[j], company=companies[j], location=locations[j], page=page, source=source, error=e)
 
             logger.info(f'Scraping for current page complete. Elapsed time for page: {su.get_pretty_time(time.time() - page_time)}.')
             logger.info('Inserting data into MongoDB...')

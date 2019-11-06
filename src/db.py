@@ -14,7 +14,19 @@ class Post(Document):
     date_accessed = DateTimeField(default=datetime.datetime.now)
 
 
+class Error(Document):
+    # Can either be an error pulling an entire page, or a specific job posting within a page
+    job_title = StringField(required=True)
+    page = StringField(required=False)
+    company = StringField(required=False)
+    location = StringField(required=False)
+    error = StringField(required=True)
+    source = StringField(required=True)
+    date_accessed = DateTimeField(default=datetime.datetime.now)
+
+
 def insert_data(jobs, companies, locations, descrs, source):
+    # Inserts data from a job posting into mongodb
     num_posts = len(jobs)
     assert all(len(arg) == num_posts for arg in [jobs, companies, locations, descrs]), 'all inputs same length'
     connect(cfg.db)
@@ -38,3 +50,16 @@ def get_data():
     for i, post in enumerate(posts.find()):
         df = df.append(pd.DataFrame(post, index=[i]))
     return df
+
+
+def insert_error(job_title, error, source, location=None, page=None, company=None):
+    # Inserts information about an error into mongodb
+    connect(cfg.db)
+    Error(
+        job_title=job_title,
+        company=company,
+        page=page,
+        location=location,
+        error=error,
+        source=source
+    ).save()
