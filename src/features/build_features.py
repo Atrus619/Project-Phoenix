@@ -11,3 +11,9 @@ def get_skills(descr):
             matched_skills.append(cs.skills[skill])
     return matched_skills
 
+
+def find_duplicates():
+    # find duplicates in the data
+    raise NotImplementedError
+
+
