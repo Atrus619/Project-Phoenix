@@ -32,6 +32,23 @@ class Constants:
     skills = {
         "Math": "Math",
         "Computer Science": "Computer Science",
-        "Microsoft Office": "Microsoft Office",
-        "Singing": "Singing"
+        "Statistics": "Statistics",
+        "Communication": "Communication",
+        "Written": "Written Skills",
+        "Verbal": "Verbal Skills",
+        "natural language": "NLP",
+        "NLP": "NLP",
+        "Deep Learning": "Deep Learning",
+        "Tensorflow": "Tensorflow",
+        "Time Series": "Time Series",
+        "Operations": "Operations",
+        "presentation": "Presentation Skills",
+        "analytics": "Analytics",
+        "relationships": "Developing Relationships",
+        "team": "Team Player",
+        "SQL": "SQL",
+        "VBA": "VBA",
+        "Python": "Python",
+        "Excel": "Excel",
+        "Microsoft Office": "Microsoft Office"
     }
