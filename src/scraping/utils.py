@@ -26,8 +26,8 @@ def get_soup(session, url, user_agent, logger):
 
 
 def custom_get(session, url, headers, logger):
-    page = session.get(url, headers=headers)
-    return page
+    with session.get(url, headers=headers) as page:
+        return page
 
 
 def build_ipvanish_server_list(base_links):

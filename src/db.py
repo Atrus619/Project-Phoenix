@@ -6,8 +6,8 @@ import pandas as pd
 
 
 class Post(Document):
-    job_title = StringField(required=True)
-    company = StringField(required=True)
+    job_title = StringField(required=False)
+    company = StringField(required=False)
     location = StringField(required=False)
     description = StringField(required=True)
     source = StringField(required=True)
@@ -43,7 +43,7 @@ def insert_data(jobs, companies, locations, descrs, source):
 
 def get_data():
     # Returns a pandas dataframe of the entire posts data set
-    client = pymongo.MongoClient()
+    client = pymongo.MongoClient(cfg.ip)
     db = client[cfg.db]
     posts = db[cfg.collection]
     df = pd.DataFrame(columns=posts.find_one().keys())
@@ -58,8 +58,8 @@ def insert_error(job_title, error, source, location=None, page=None, company=Non
     Error(
         job_title=job_title,
         company=company,
-        page=page,
+        page=str(page),
         location=location,
-        error=error,
+        error=str(error),
         source=source
     ).save()
