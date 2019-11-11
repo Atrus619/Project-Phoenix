@@ -41,14 +41,22 @@ def insert_data(jobs, companies, locations, descrs, source):
         ).save()
 
 
-def get_data():
-    # Returns a pandas dataframe of the entire posts data set
+def get_data(query={}, no_id=True):
+    """ Read from Mongo and Store into DataFrame """
+    # Connect to MongoDB
     client = pymongo.MongoClient(cfg.ip)
     db = client[cfg.db]
-    posts = db[cfg.collection]
-    df = pd.DataFrame(columns=posts.find_one().keys())
-    for i, post in enumerate(posts.find()):
-        df = df.append(pd.DataFrame(post, index=[i]))
+
+    # Make a query to the specific DB and Collection
+    cursor = db[cfg.collection].find(query)
+
+    # Expand the cursor and construct the DataFrame
+    df = pd.DataFrame(list(cursor))
+
+    # Delete the _id
+    if no_id:
+        del df['_id']
+
     return df
 
 
