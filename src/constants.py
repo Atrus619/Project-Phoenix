@@ -50,5 +50,6 @@ class Constants:
         "VBA": "VBA",
         "Python": "Python",
         "Excel": "Excel",
-        "Microsoft Office": "Microsoft Office"
+        "Microsoft Office": "Microsoft Office",
+        "Research": "Research"
     }
