@@ -18,7 +18,7 @@ class Config:
     # Secrets
     ipvanish_password = os.environ.get('ipvanish_password') or 'you-will-never-guess'
     sudo_password = os.environ.get('sudo_password') or 'good-luck'
-    ip = os.environ.get('ip') or 'run hostname -I'
+    ip = os.environ.get('ip') or '127.0.0.1'
 
     min_pause = 0.5  # in seconds
     max_pause = 2
