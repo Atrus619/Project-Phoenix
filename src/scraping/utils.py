@@ -51,6 +51,9 @@ def random_pause(min_pause=2, max_pause=10):
 def setup_scrape_logger(name, filename, level=logging.INFO):
     log_setup = logging.getLogger(name)
 
+    if len(log_setup.handlers) == 2:  # Logger already set up for current run
+        return
+
     log_dir = os.path.join(cfg.log_folder, 'scraping')
     os.makedirs(log_dir, exist_ok=True)
 
