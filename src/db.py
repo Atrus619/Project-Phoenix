@@ -29,7 +29,7 @@ def insert_data(jobs, companies, locations, descrs, source):
     # Inserts data from a job posting into mongodb
     num_posts = len(jobs)
     assert all(len(arg) == num_posts for arg in [jobs, companies, locations, descrs]), 'all inputs same length'
-    connect(cfg.db)
+    connect(cfg.db, host=cfg.ip)
     for i in range(num_posts):
         Post(
             job_title=jobs[i],
@@ -62,7 +62,7 @@ def get_data(query={}, no_id=True):
 
 def insert_error(job_title, error, source, location=None, page=None, company=None):
     # Inserts information about an error into mongodb
-    connect(cfg.db)
+    connect(cfg.db, host=cfg.ip)
     Error(
         job_title=job_title,
         company=company,
