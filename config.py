@@ -46,6 +46,12 @@ class Config:
     }
 
     log_folder = 'logs'
+    validation_log_folder = 'logs/validations'
+    tb_log_folder = 'logs/tensorboard'
+    checkpoint_log_folder = 'logs/checkpoints'
+
+    [os.makedirs(folder, exist_ok=True) for folder in (log_folder, validation_log_folder, tb_log_folder, checkpoint_log_folder)]
+
     scrape_log_name = 'scrape_log'
     scrape_error_log_name = 'scrape_error_log'
 
