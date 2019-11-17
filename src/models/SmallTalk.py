@@ -1,4 +1,4 @@
-from pytorch_transformers import GPT2DoubleHeadsModel, GPT2Tokenizer, AdamW, WEIGHTS_NAME
+from pytorch_transformers import GPT2DoubleHeadsModel, GPT2Tokenizer, OpenAIGPTDoubleHeadsModel, OpenAIGPTTokenizer, AdamW, WEIGHTS_NAME
 import src.models.utils as smu
 import torch
 import math
@@ -13,23 +13,19 @@ from apex import amp
 
 
 class SmallTalk:
-    def __init__(self, name, size, opt_level, lr=6.25e-5, lm_coef=1.0, mc_coef=1.0, gradient_accumulation_steps=8, max_norm=1.0, device='cuda:0'):
+    def __init__(self, name, model_name, model_type='gpt2', opt_level="O1", lr=6.25e-5, lm_coef=1.0, mc_coef=1.0, gradient_accumulation_steps=8, max_norm=1.0, device='cuda:0'):
         self.lr, self.lm_coef, self.mc_coef, self.gradient_accumulation_steps, self.max_norm, self.device = lr, lm_coef, mc_coef, gradient_accumulation_steps, max_norm, device
 
         self.verbose = False
         self.epoch = 0
         self.name = name
-        self.size = size
+        self.model_name = model_name
+        self.model_type = model_type
         self.opt_level = opt_level
         self.logger, self.tb_logger, self.checkpoint_handler = smu.setup_training_loggers(self.name)
 
-        assert self.size in ('small', 'medium', 'large')
-        model_name = 'gpt2'
-        if self.size in ('medium', 'large'):
-            model_name += '-' + self.size
-
-        self.model = GPT2DoubleHeadsModel.from_pretrained(model_name).to(self.device)
-        self.tokenizer = GPT2Tokenizer.from_pretrained(model_name)
+        model_class, tokenizer_class = (GPT2DoubleHeadsModel, GPT2Tokenizer) if self.model_type == 'gpt2' else (OpenAIGPTDoubleHeadsModel, OpenAIGPTTokenizer)
+        self.model, self.tokenizer = model_class.from_pretrained(self.model_name).to(self.device), tokenizer_class.from_pretrained(self.model_name)
 
         smu.add_special_tokens_(model=self.model, tokenizer=self.tokenizer)
 
@@ -102,7 +98,7 @@ class SmallTalk:
         pbar.attach(self.trainer, metric_names=["loss"])
 
         if not self.verbose:
-            pbar_eval = ProgressBar(persist=True)
+            pbar_eval = ProgressBar(persist=False)
             pbar_eval.attach(self.evaluator)
 
         self.evaluator.add_event_handler(Events.STARTED, lambda _: self.logger.info(f'Beginning validation for epoch {self.epoch}...'))
@@ -129,7 +125,8 @@ class SmallTalk:
         save_dict = {
             'epoch': self.epoch,
             'model_state_dict': self.model.state_dict(),
-            'size': self.size,
+            'model_name': self.model_name,
+            'model_type': self.model_type,
             'opt_level': self.opt_level
         }
 
@@ -141,7 +138,8 @@ class SmallTalk:
     def load(self, path):
         """ Loads important components of model back into memory to pick up where we left off. """
         checkpoint = torch.load(path)
-        assert self.size == checkpoint['size'], f"Model sizes do not match, current model is {self.size} and loaded model is {checkpoint['size']}"
+        assert self.model_type == checkpoint['model_type'], f"Model types do not match, current model is {self.model_type} and loaded model is {checkpoint['model_type']}"
+        assert self.model_name == checkpoint['model_name'], f"Model names do not match, current model is {self.model_name} and loaded model is {checkpoint['model_name']}"
         assert self.opt_level == checkpoint['opt_level'], f"Model opt_levels do not match, current model is {self.opt_level} and loaded model is {checkpoint['opt_level']}"
 
         self.model.load_state_dict(checkpoint['model_state_dict'])
@@ -153,3 +151,8 @@ class SmallTalk:
 
     def update_epoch(self):
         self.epoch += 1
+
+    def get_num_params(self, trainable_only=True):
+        if trainable_only:
+            return sum(p.numel() for p in self.model.parameters() if p.requires_grad)
+        return sum(p.numel() for p in self.model.parameters())

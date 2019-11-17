@@ -72,8 +72,14 @@ class AttrDict(dict):
 def setup_training_loggers(name, level=logging.INFO):
     log_setup = logging.getLogger(name)
 
+    os.makedirs(os.path.join(cfg.tb_log_folder, name), exist_ok=True)
+    tb_logger = TensorboardLogger(os.path.join(cfg.tb_log_folder, name))
+
+    os.makedirs(os.path.join(cfg.checkpoint_log_folder, name), exist_ok=True)
+    checkpoint_handler = ModelCheckpoint(os.path.join(cfg.checkpoint_log_folder, name), 'checkpoint', save_interval=1, n_saved=3, require_empty=False)
+
     if len(log_setup.handlers) == 2:  # Logger already set up for current run
-        return
+        return log_setup, tb_logger, checkpoint_handler
 
     fileHandler = logging.FileHandler(os.path.join(cfg.validation_log_folder, name + '.log'), mode='a')
     formatter = logging.Formatter('%(levelname)s: %(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
@@ -85,12 +91,6 @@ def setup_training_loggers(name, level=logging.INFO):
     log_setup.setLevel(level)
     log_setup.addHandler(fileHandler)
     log_setup.addHandler(consoleHandler)
-
-    os.makedirs(os.path.join(cfg.tb_log_folder, name), exist_ok=True)
-    tb_logger = TensorboardLogger(os.path.join(cfg.tb_log_folder, name))
-
-    os.makedirs(os.path.join(cfg.checkpoint_log_folder, name), exist_ok=True)
-    checkpoint_handler = ModelCheckpoint(os.path.join(cfg.checkpoint_log_folder, name), 'checkpoint', save_interval=1, n_saved=3)
 
     return logging.getLogger(name), tb_logger, checkpoint_handler
 
@@ -126,7 +126,7 @@ def build_input_from_segments(persona, history, reply, tokenizer, lm_labels=Fals
     return instance
 
 
-def get_small_talk_data_loaders(config, tokenizer):
+def get_small_talk_data_loaders(config, tokenizer, logger):
     """ Prepare the dataset for training and evaluation """
     personachat = get_small_talk_dataset(tokenizer, config['dataset_path'], config['dataset_cache'])
 

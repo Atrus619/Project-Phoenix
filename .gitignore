@@ -7,4 +7,4 @@ venv/
 .env
 *__pycache__*
 logs/
-dataset_cache_GPT2Tokenizer
+dataset_cache_*
