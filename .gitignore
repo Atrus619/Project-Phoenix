@@ -8,3 +8,4 @@ venv/
 *__pycache__*
 logs/
 dataset_cache_*
+tmp*
