@@ -1,5 +1,5 @@
 from pytorch_transformers import GPT2DoubleHeadsModel, GPT2Tokenizer, OpenAIGPTDoubleHeadsModel, OpenAIGPTTokenizer, AdamW, WEIGHTS_NAME
-import src.models.utils as smu
+import src.models.SmallTalk.utils as stu
 import torch
 import math
 from pprint import pformat
@@ -10,28 +10,31 @@ from ignite.contrib.handlers import ProgressBar, PiecewiseLinear
 from ignite.metrics import Accuracy, Loss, MetricsLambda, RunningAverage
 from ignite.contrib.handlers.tensorboard_logger import OutputHandler, OptimizerParamsHandler
 from apex import amp
+import time
+import random
+from itertools import chain
 
 
 class SmallTalk:
-    def __init__(self, name, model_name, model_type='gpt2', opt_level="O1", lr=6.25e-5, lm_coef=1.0, mc_coef=1.0, gradient_accumulation_steps=8, max_norm=1.0, device='cuda:0'):
+    def __init__(self, name, model_name, model_type='gpt2', opt_level=None, lr=6.25e-5, lm_coef=1.0, mc_coef=1.0, gradient_accumulation_steps=8, max_norm=1.0, device='cuda:0'):
         self.lr, self.lm_coef, self.mc_coef, self.gradient_accumulation_steps, self.max_norm, self.device = lr, lm_coef, mc_coef, gradient_accumulation_steps, max_norm, device
+        self.name, self.model_name, self.model_type, self.opt_level = name, model_name, model_type, opt_level
+
+        self.logger, self.tb_logger, self.checkpoint_handler = stu.setup_training_loggers(self.name)
 
         self.verbose = False
         self.epoch = 0
-        self.name = name
-        self.model_name = model_name
-        self.model_type = model_type
-        self.opt_level = opt_level
-        self.logger, self.tb_logger, self.checkpoint_handler = smu.setup_training_loggers(self.name)
 
+        # TODO: Add logger statement here
         model_class, tokenizer_class = (GPT2DoubleHeadsModel, GPT2Tokenizer) if self.model_type == 'gpt2' else (OpenAIGPTDoubleHeadsModel, OpenAIGPTTokenizer)
         self.model, self.tokenizer = model_class.from_pretrained(self.model_name).to(self.device), tokenizer_class.from_pretrained(self.model_name)
 
-        smu.add_special_tokens_(model=self.model, tokenizer=self.tokenizer)
+        stu.add_special_tokens_(model=self.model, tokenizer=self.tokenizer)
 
         self.optimizer = AdamW(self.model.parameters(), lr=self.lr, correct_bias=True)
 
-        self.model, self.optimizer = amp.initialize(self.model, self.optimizer, opt_level=self.opt_level)
+        if self.opt_level:
+            self.model, self.optimizer = amp.initialize(self.model, self.optimizer, opt_level=self.opt_level)
 
         self.trainer = Engine(self.update)
         self.evaluator = Engine(self.inference)
@@ -46,9 +49,13 @@ class SmallTalk:
         )
         loss = (lm_loss * self.lm_coef + mc_loss * self.mc_coef) / self.gradient_accumulation_steps
 
-        with amp.scale_loss(loss, self.optimizer) as scaled_loss:
-            scaled_loss.backward()
-        torch.nn.utils.clip_grad_norm_(amp.master_params(self.optimizer), self.max_norm)
+        if self.opt_level:
+            with amp.scale_loss(loss, self.optimizer) as scaled_loss:
+                scaled_loss.backward()
+            torch.nn.utils.clip_grad_norm_(amp.master_params(self.optimizer), self.max_norm)
+        else:
+            loss.backward()
+            torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.max_norm)
 
         if engine.state.iteration % self.gradient_accumulation_steps == 0:
             self.optimizer.step()
@@ -135,6 +142,7 @@ class SmallTalk:
 
         torch.save(save_dict, path)
 
+    # TODO: May want to revisit here if we want to do evaluation on a cpu. See https://github.com/NVIDIA/apex/issues/242
     def load(self, path):
         """ Loads important components of model back into memory to pick up where we left off. """
         checkpoint = torch.load(path)
@@ -146,8 +154,14 @@ class SmallTalk:
         if 'optimizer_state_dict' in checkpoint:
             self.logger.info('Optimizer information saved for continued training. Loading into model.')
             self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        else:
+            self.logger.info('Model previously saved for inference only.')
 
         self.epoch = checkpoint['epoch']
+
+    def load_checkpoint(self, path):
+        """ Loads an entire checkpoint and overwrite model """
+        self.model.load_state_dict(torch.load(path, map_location=self.device))
 
     def update_epoch(self):
         self.epoch += 1
@@ -156,3 +170,46 @@ class SmallTalk:
         if trainable_only:
             return sum(p.numel() for p in self.model.parameters() if p.requires_grad)
         return sum(p.numel() for p in self.model.parameters())
+
+    def interact(self, personality=None, max_history=2, max_length=20, min_length=1, temperature=0.7, top_k=0, top_p=0.9, no_sample=False, random_pause=None):
+        """
+        Interact with bot in python setting
+        :param personality: Personality to use to condition model on for chat. None will pull a random one from training data set. List of several short sentences describing personality.
+        :param max_history: Number of responses per individual to retain for model to generate text with (in addition to the utterance the model is directly responding to).
+        :param max_length: Maximum length of output utterances
+        :param min_length: Minimum length of output utterances
+        :param temperature: Sampling softmax temperature. 1.0 is standard softmax, as it decreases it allows for less diversity in outputs (makes peaks higher in distribution).
+        :param top_k: Filter top_k tokens before sampling (<=0 is no filtering)
+        :param top_p: Nucleus filtering
+        :param no_sample: Whether to simply choose the most likely token at each sample and skip fancy sampling methods above
+        :param random_pause: Whether to pause for random amounts of time to seem more human (should be tuple of low and high value to randomly pause between).
+        """
+        if personality is None:
+            personality = stu.get_random_personality(self)
+        else:
+            personality = [self.tokenizer.encode(sentence) for sentence in personality]
+            self.logger.info(self.tokenizer.decode(list(chain(*personality))))
+
+        self.model.eval()
+        history = []
+
+        self.logger.info('You may now begin talking to the bot. Don\'t be shy, say hello!')
+
+        while True:
+            raw_text = input('>>> ')
+            while not raw_text:
+                print('Please enter in a non-empty value.')
+                raw_text = input('>>> ')
+            history.append(self.tokenizer.encode(raw_text))
+
+            if random_pause:
+                assert len(random_pause) == 2, 'random_pause arg should be a tuple of length 2 if passed'
+                time.sleep(random_pause[0] + random.random() * (random_pause[1] - random_pause[0]))
+
+            with torch.no_grad():
+                out_ids = stu.sample_sequence(personality=personality, history=history, tokenizer=self.tokenizer, model=self.model, device=self.device,
+                                              max_length=max_length, min_length=min_length, temperature=temperature, top_k=top_k, top_p=top_p, no_sample=no_sample)
+            history.append(out_ids)
+            history = history[-(2 * max_history + 1):]
+            out_text = self.tokenizer.decode(out_ids, skip_special_tokens=True)
+            print(out_text)
