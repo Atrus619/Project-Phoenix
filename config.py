@@ -49,6 +49,7 @@ class Config:
     validation_log_folder = 'logs/validations'
     tb_log_folder = 'logs/tensorboard'
     checkpoint_log_folder = 'logs/checkpoints'
+    pickle_log_folder = 'logs/pickles'
 
     [os.makedirs(folder, exist_ok=True) for folder in (log_folder, validation_log_folder, tb_log_folder, checkpoint_log_folder)]
 

@@ -13,13 +13,21 @@ from ignite.contrib.handlers.tensorboard_logger import TensorboardLogger
 from ignite.handlers import ModelCheckpoint
 import torch
 from pytorch_transformers import cached_path
+import random
+import pickle as pkl
+import warnings
+import torch.nn.functional as F
 
 PERSONACHAT_URL = "https://s3.amazonaws.com/datasets.huggingface.co/personachat/personachat_self_original.json"
 HF_FINETUNED_MODEL = "https://s3.amazonaws.com/models.huggingface.co/transfer-learning-chatbot/gpt_personachat_cache.tar.gz"
 
 SPECIAL_TOKENS = ["<bos>", "<eos>", "<speaker1>", "<speaker2>", "<pad>"]
-ATTR_TO_SPECIAL_TOKEN = {'bos_token': '<bos>', 'eos_token': '<eos>', 'pad_token': '<pad>',
-                         'additional_special_tokens': ('<speaker1>', '<speaker2>')}
+ATTR_TO_SPECIAL_TOKEN = {
+    'bos_token': '<bos>',
+    'eos_token': '<eos>',
+    'pad_token': '<pad>',
+    'additional_special_tokens': ('<speaker1>', '<speaker2>')
+}
 MODEL_INPUTS = ["input_ids", "mc_token_ids", "lm_labels", "mc_labels", "token_type_ids"]
 PADDED_INPUTS = ["input_ids", "lm_labels", "token_type_ids"]
 
@@ -36,7 +44,7 @@ def download_pretrained_small_talk_model():
     return tempdir
 
 
-def get_small_talk_dataset(tokenizer, dataset_path, dataset_cache):
+def get_small_talk_dataset(tokenizer, logger=logging.getLogger(__name__), dataset_path='', dataset_cache='./dataset_cache'):
     """ Get tokenized PERSONACHAT dataset from S3 or cache."""
     dataset_path = dataset_path or PERSONACHAT_URL
     dataset_cache = dataset_cache + '_' + type(tokenizer).__name__  # To avoid using GPT cache for GPT-2 and vice-versa
@@ -57,6 +65,7 @@ def get_small_talk_dataset(tokenizer, dataset_path, dataset_cache):
             if isinstance(obj, dict):
                 return dict((n, tokenize(o)) for n, o in obj.items())
             return list(tokenize(o) for o in obj)
+
         dataset = tokenize(dataset)
         torch.save(dataset, dataset_cache)
 
@@ -115,8 +124,8 @@ def build_input_from_segments(persona, history, reply, tokenizer, lm_labels=Fals
     """ Build a sequence of input from 3 segments: persona, history and last reply. """
     bos, eos, speaker1, speaker2 = tokenizer.convert_tokens_to_ids(SPECIAL_TOKENS[:-1])
     sequence = [[bos] + list(chain(*persona))] + history + [reply + ([eos] if with_eos else [])]
-    sequence = [sequence[0]] + [[speaker2 if (len(sequence)-i) % 2 else speaker1] + s for i, s in enumerate(sequence[1:])]
-    instance = {}
+    sequence = [sequence[0]] + [[speaker2 if (len(sequence) - i) % 2 else speaker1] + s for i, s in enumerate(sequence[1:])]
+    instance = dict()
     instance["input_ids"] = list(chain(*sequence))
     instance["token_type_ids"] = [speaker2 if i % 2 else speaker1 for i, s in enumerate(sequence) for _ in s]
     instance["mc_token_ids"] = len(instance["input_ids"]) - 1
@@ -128,13 +137,13 @@ def build_input_from_segments(persona, history, reply, tokenizer, lm_labels=Fals
 
 def get_small_talk_data_loaders(config, tokenizer, logger):
     """ Prepare the dataset for training and evaluation """
-    personachat = get_small_talk_dataset(tokenizer, config['dataset_path'], config['dataset_cache'])
+    personachat = get_small_talk_dataset(tokenizer=tokenizer, logger=logger, dataset_path=config['dataset_path'], dataset_cache=config['dataset_cache'])
 
     logger.info("Build inputs and labels")
     datasets = {"train": defaultdict(list), "valid": defaultdict(list)}
     for dataset_name, dataset in personachat.items():
         num_candidates = len(dataset[0]["utterances"][0]["candidates"])
-        if config['num_candidates'] > 0 and dataset_name == 'train':
+        if config['num_candidates'] > 0:  # and dataset_name == 'train':
             num_candidates = min(config['num_candidates'], num_candidates)
         for dialog in dataset:
             persona = dialog["personality"].copy()
@@ -142,7 +151,7 @@ def get_small_talk_data_loaders(config, tokenizer, logger):
                 for utterance in dialog["utterances"]:
                     history = utterance["history"][-(2 * config['max_history'] + 1):]
                     for j, candidate in enumerate(utterance["candidates"][-num_candidates:]):
-                        lm_labels = bool(j == num_candidates-1)
+                        lm_labels = bool(j == num_candidates - 1)
                         instance = build_input_from_segments(persona, history, candidate, tokenizer, lm_labels)
                         for input_name, input_array in instance.items():
                             datasets[dataset_name][input_name].append(input_array)
@@ -168,3 +177,99 @@ def get_small_talk_data_loaders(config, tokenizer, logger):
     logger.info("Train dataset (Batch, Candidates, Seq length): {}".format(train_dataset.tensors[0].shape))
     logger.info("Valid dataset (Batch, Candidates, Seq length): {}".format(valid_dataset.tensors[0].shape))
     return train_loader, valid_loader
+
+
+def pickle_personalities(STM):
+    """ STM = SmallTalkModel class instance """
+    STM.logger.info('Gathering data set in order to pickle personalities...')
+    dataset = get_small_talk_dataset(tokenizer=STM.tokenizer, logger=STM.logger)
+    personalities = [dialog["personality"] for dataset in dataset.values() for dialog in dataset]
+    STM.logger.info('Personalities aggregated. Pickling to file...')
+    os.makedirs(os.path.join(cfg.pickle_log_folder, STM.name), exist_ok=True)
+    with open(os.path.join(cfg.pickle_log_folder, STM.name, 'personalities.pkl'), 'wb') as f:
+        pkl.dump(personalities, f)
+
+
+def get_random_personality(STM):
+    """ STM = SmallTalkModel class instance """
+    if not os.path.exists(os.path.join(cfg.pickle_log_folder, STM.name, 'personalities.pkl')):
+        pickle_personalities(STM=STM)
+
+    with open(os.path.join(cfg.pickle_log_folder, STM.name, 'personalities.pkl'), 'rb') as f:
+        personalities = pkl.load(f)
+
+    personality = random.choice(personalities)
+    STM.logger.info('Selected personality: %s', STM.tokenizer.decode(chain(*personality)))
+    return personality
+
+
+def top_filtering(logits, top_k=0., top_p=0.9, threshold=-float('Inf'), filter_value=-float('Inf')):
+    """ Filter a distribution of logits using top-k, top-p (nucleus) and/or threshold filtering
+        Args:
+            logits: logits distribution shape (vocabulary size)
+            top_k: <=0: no filtering, >0: keep only top k tokens with highest probability.
+            top_p: <=0.0: no filtering, >0.0: keep only a subset S of candidates, where S is the smallest subset
+                whose total probability mass is greater than or equal to the threshold top_p.
+                In practice, we select the highest probability tokens whose cumulative probability mass exceeds
+                the threshold top_p.
+            threshold: a minimal threshold to keep logits
+    """
+    assert logits.dim() == 1  # Only work for batch size 1 for now - could update but it would obfuscate a bit the code
+    top_k = min(top_k, logits.size(-1))
+    if top_k > 0:
+        # Remove all tokens with a probability less than the last token in the top-k tokens
+        indices_to_remove = logits < torch.topk(logits, top_k)[0][..., -1, None]
+        logits[indices_to_remove] = filter_value
+
+    if top_p > 0.0:
+        # Compute cumulative probabilities of sorted tokens
+        sorted_logits, sorted_indices = torch.sort(logits, descending=True)
+        cumulative_probabilities = torch.cumsum(F.softmax(sorted_logits, dim=-1), dim=-1)
+
+        # Remove tokens with cumulative probability above the threshold
+        sorted_indices_to_remove = cumulative_probabilities > top_p
+        # Shift the indices to the right to keep also the first token above the threshold
+        sorted_indices_to_remove[..., 1:] = sorted_indices_to_remove[..., :-1].clone()
+        sorted_indices_to_remove[..., 0] = 0
+
+        # Back to unsorted indices and set them to -infinity
+        indices_to_remove = sorted_indices[sorted_indices_to_remove]
+        logits[indices_to_remove] = filter_value
+
+    indices_to_remove = logits < threshold
+    logits[indices_to_remove] = filter_value
+
+    return logits
+
+
+def sample_sequence(personality, history, tokenizer, model, device, max_length, min_length, temperature, top_k, top_p, no_sample, current_output=None):
+    special_tokens_ids = tokenizer.convert_tokens_to_ids(SPECIAL_TOKENS)
+    if current_output is None:
+        current_output = []
+
+    for i in range(max_length):
+        instance = build_input_from_segments(personality, history, current_output, tokenizer, with_eos=False)
+
+        input_ids = torch.tensor(instance["input_ids"], device=device).unsqueeze(0)
+        token_type_ids = torch.tensor(instance["token_type_ids"], device=device).unsqueeze(0)
+
+        logits = model(input_ids, token_type_ids=token_type_ids)
+        if isinstance(logits, tuple):  # for gpt2 and maybe others
+            logits = logits[0]
+        logits = logits[0, -1, :] / temperature
+        logits = top_filtering(logits, top_k=top_k, top_p=top_p)
+        probs = F.softmax(logits, dim=-1)
+
+        prev = torch.topk(probs, 1)[1] if no_sample else torch.multinomial(probs, 1)
+        if i < min_length and prev.item() in special_tokens_ids:
+            while prev.item() in special_tokens_ids:
+                if probs.max().item() == 1:
+                    warnings.warn("Warning: model generating special token with probability 1.")
+                    break  # avoid infinitely looping over special token
+                prev = torch.multinomial(probs, num_samples=1)
+
+        if prev.item() in special_tokens_ids:
+            break
+        current_output.append(prev.item())
+
+    return current_output
