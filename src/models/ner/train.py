@@ -77,7 +77,7 @@ if __name__ == "__main__":
     parser.add_argument('--train_path', type=str, default='', help='Path to training file.')
     parser.add_argument('--prop_path', type=str, default='src/models/ner/config.prop', help='Path to properties file.')
     parser.add_argument('--ner_jar_path', type=str, default='logs/ner/stanford-ner-2018-10-16/stanford-ner.jar', help='Path to stanford ner jar file.')
-    parser.add_argument('--output_path', type=str, default='src/models/ner/ner-model.ser.gz', help='Desired output path for model. Should end in .ser.gz.')
+    parser.add_argument('--output_path', type=str, default='src/pipeline/serialized_models/ner-model.ser.gz', help='Desired output path for model. Should end in .ser.gz.')
     parser.add_argument('--num_folds', type=int, default=5, help='Number of folds to use for cross-validation.')
     parser.add_argument('--oof_metrics_path', type=str, default='logs/ner/cv/oof_metrics.pkl', help='Desired output path for output metrics. Pickle file that should end in .pkl')
     args = parser.parse_args()
