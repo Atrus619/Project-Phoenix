@@ -37,14 +37,48 @@ class Interpreter:
         os.system('pkill bert')
         self.BaaS = None
 
-    def tag_ner(self, sentence, ner_tagger):
-        return ner_tagger.tag(nltk.word_tokenize(sentence))
+    def tag_ner(self, sentence):
+        return self.ner_tagger.tag(nltk.word_tokenize(sentence))
 
     def count_ner(self, tagged_sentence):
         return Counter(tag[1] for tag in tagged_sentence)
 
+    def get_recognized_entities(self, sentence):
+        tagged_sentence = self.tag_ner(sentence)
+        entity_features = self.get_entity_features_single(sentence)
+
+        output_dict = dict()
+        for entity_feature in entity_features:
+            output_dict[entity_feature] = []
+            current_index = 0
+
+            # Once IndexError is hit, it's time to move to next entity_feature
+            try:
+                while True:
+                    # Find occurrence of entity_feature
+                    while tagged_sentence[current_index][1] != entity_feature:
+                        current_index += 1
+
+                    # Concatenate stream of same entity
+                    output_dict[entity_feature].append(tagged_sentence[current_index][0])
+                    current_index += 1
+                    while tagged_sentence[current_index][1] == entity_feature:
+                        output_dict[entity_feature][-1] += ' ' + tagged_sentence[current_index][0]
+                        current_index += 1
+
+            except IndexError:
+                continue
+
+        return output_dict
+
+    def get_intent(self, sentence):
+        assert self.entity_classifier is not None, "Entity classifier not yet trained"
+
+        latent_vector = self.preprocess_input_single(sentence)
+        return self.entity_classifier.predict(latent_vector).item()
+
     def get_entity_features_single(self, sentence):
-        counter = self.count_ner(self.tag_ner(sentence, self.ner_tagger))
+        counter = self.count_ner(self.tag_ner(sentence))
         output_dict = dict()
 
         for target_entity in self.target_entities:
@@ -53,7 +87,7 @@ class Interpreter:
         return pd.DataFrame(output_dict)
 
     def get_entity_features_batch(self, sentences):
-        counters_series = sentences.apply(lambda x: self.count_ner(self.tag_ner(x, self.ner_tagger)))
+        counters_series = sentences.apply(lambda x: self.count_ner(self.tag_ner(x)))
         output_dict = dict()
 
         for target_entity in self.target_entities:
