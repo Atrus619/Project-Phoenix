@@ -60,3 +60,10 @@ class Config:
 
     fail_wait_time = 60  # seconds
     max_retry_attempts = 3  # attempts
+
+    valid_intents = {
+        'small_talk': 'Smalltalk',
+        'end_of_conversation': 'Conclusions',
+        '[job]_in_[location]': '[JOB]_in_[LOCATION]',
+        '[skills]_for_[job]': 'skills_for_[JOB]'
+    }
