@@ -21,6 +21,13 @@ class Interpreter:
         self.BaaS = None
         self.entity_classifier = None
 
+    def parse_user_msg(self, raw_text):
+        latent_vector = self.preprocess_input_single(sentence=raw_text)
+        recognized_entities = self.get_recognized_entities(sentence=raw_text)
+        classified_intent = self.get_intent(sentence=raw_text)
+
+        return raw_text, latent_vector, recognized_entities, classified_intent
+
     def init_BaaS(self):
         if self.BaaS is not None:
             self.kill_BaaS()

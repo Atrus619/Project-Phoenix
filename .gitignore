@@ -9,3 +9,4 @@ venv/
 logs/
 dataset_cache_*
 tmp*
+*~lock*

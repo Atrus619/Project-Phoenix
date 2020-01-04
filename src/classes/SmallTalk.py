@@ -184,11 +184,8 @@ class SmallTalk:
         :param no_sample: Whether to simply choose the most likely token at each sample and skip fancy sampling methods above
         :param random_pause: Whether to pause for random amounts of time to seem more human (should be tuple of low and high value to randomly pause between).
         """
-        if personality is None:
-            personality = stu.get_random_personality(self)
-        else:
-            personality = [self.tokenizer.encode(sentence) for sentence in personality]
-            self.logger.info(self.tokenizer.decode(list(chain(*personality))))
+        personality = self.get_personality(personality=personality)
+        self.logger.info(self.tokenizer.decode(list(chain(*personality))))
 
         self.model.eval()
         history = []
@@ -213,3 +210,35 @@ class SmallTalk:
             history = history[-(2 * max_history + 1):]
             out_text = self.tokenizer.decode(out_ids, skip_special_tokens=True)
             print(out_text)
+
+    def get_reply(self, conversation_history, personality, max_history=2, max_length=20, min_length=1, temperature=0.7, top_k=0, top_p=0.9, no_sample=False, random_pause=None):
+        """
+        Based heavily on self.interact. See above documentation for detail on parameters.
+        Alternate version of interact for use with chatbot. Uses ConversationHistory object to put together the history and return one reply at a time, rather than manage
+        an entire conversation.
+        """
+        self.model.eval()
+
+        # Build history object from ConversationHistory class
+        history = conversation_history.get_list_of_conversation_latest_n_exchanges(n=max_history)
+        history = [self.tokenizer.encode(msg) for msg in history]
+
+        # Get ids from model
+        with torch.no_grad():
+            out_ids = stu.sample_sequence(personality=personality, history=history, tokenizer=self.tokenizer, model=self.model, device=self.device,
+                                          max_length=max_length, min_length=min_length, temperature=temperature, top_k=top_k, top_p=top_p, no_sample=no_sample)
+
+        return self.tokenizer.decode(out_ids, skip_special_tokens=True)
+
+    def get_personality(self, personality=None):
+        """
+        Retrieves a random personality if personality is None, otherwise converts personality raw text to a format the model understands.
+        :param personality: List of 4-5 sentences in raw text string form
+        """
+        if personality is None:
+            return stu.get_random_personality(self)
+        else:
+            return [self.tokenizer.encode(sentence) for sentence in personality]
+
+    def print_personality(self, personality):
+        print(self.tokenizer.decode(chain(*personality)))

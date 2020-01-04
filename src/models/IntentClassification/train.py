@@ -4,6 +4,7 @@ from sklearn.metrics import classification_report
 from nltk.tag.stanford import StanfordNERTagger
 import sys; sys.path.append('')
 from src.classes.Interpreter import Interpreter
+from config import Config as cfg
 
 
 # Define helper routines
@@ -19,12 +20,12 @@ def get_ner_tagger(ner_model_path, jar_path):
 
 if __name__ == "__main__":
     parser = ArgumentParser()
-    parser.add_argument('--data_path', type=str, default='src/data/intent_and_ner/Intent Training Examples_JL.xlsx', help='Path to training data file. Should have a .xlsx extension.')
-    parser.add_argument('--ner_model_path', type=str, default='src/models/ner/ner-model.ser.gz', help='Path to pre-trained NER model file. Should have a .ser.gz extension.')
-    parser.add_argument('--ner_jar_path', type=str, default='logs/ner/stanford-ner-2018-10-16/stanford-ner.jar', help='Path to NER jar file. Should have a .jar extension.')
-    parser.add_argument('--target_entities', type=str, nargs='*', help='List of entities to target as additional features (counts the number of occurrences).')
-    parser.add_argument('--num_cv_folds', type=int, default=5, help='Number of folds to use for cross-validation.')
-    parser.add_argument('--output_path', type=str, default='src/pipeline/serialized_models/interpreter.pkl', help='Desired output path for model. Should end in [model_name].pkl')
+    parser.add_argument('--data_path', type=str, default=cfg.ner_and_intent_training_data_path, help='Path to training data file. Should have a .xlsx extension.')
+    parser.add_argument('--ner_model_path', type=str, default=cfg.ner_model_path, help='Path to pre-trained NER model file. Should have a .ser.gz extension.')
+    parser.add_argument('--ner_jar_path', type=str, default=cfg.ner_jar_path, help='Path to NER jar file. Should have a .jar extension.')
+    parser.add_argument('--target_entities', type=str, nargs='*', default=cfg.target_entities, help='List of entities to target as additional features (counts the number of occurrences).')
+    parser.add_argument('--num_cv_folds', type=int, default=cfg.intent_training_num_cv, help='Number of folds to use for cross-validation.')
+    parser.add_argument('--output_path', type=str, default=cfg.default_interpreter_output_path, help='Desired output path for model. Should end in [model_name].pkl')
     args = parser.parse_args()
 
     # Initialize data, BaaS, and ner_tagger

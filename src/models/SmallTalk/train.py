@@ -1,4 +1,4 @@
-from src.models.SmallTalk.SmallTalk import SmallTalk
+from src.classes.SmallTalk import SmallTalk
 import src.models.SmallTalk.utils as smu
 import os
 
