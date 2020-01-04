@@ -190,7 +190,7 @@ def pickle_personalities(STM):
         pkl.dump(personalities, f)
 
 
-def get_random_personality(STM):
+def get_random_personality(STM, verbose=False):
     """ STM = SmallTalkModel class instance """
     if not os.path.exists(os.path.join(cfg.pickle_log_folder, STM.name, 'personalities.pkl')):
         pickle_personalities(STM=STM)
@@ -199,7 +199,8 @@ def get_random_personality(STM):
         personalities = pkl.load(f)
 
     personality = random.choice(personalities)
-    STM.logger.info('Selected personality: %s', STM.tokenizer.decode(chain(*personality)))
+    if verbose:
+        STM.logger.info('Selected personality: %s', STM.tokenizer.decode(chain(*personality)))
     return personality
 
 

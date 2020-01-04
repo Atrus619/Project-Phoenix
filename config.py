@@ -12,6 +12,7 @@ except ModuleNotFoundError:
 
 
 class Config:
+    # MongoDB
     db = 'phoenixdb'
     collection = 'post'
 
@@ -20,6 +21,7 @@ class Config:
     sudo_password = os.environ.get('sudo_password') or 'good-luck'
     ip = os.environ.get('ip') or '127.0.0.1'
 
+    # Scraper
     min_pause = 0.5  # in seconds
     max_pause = 2
 
@@ -61,9 +63,28 @@ class Config:
     fail_wait_time = 60  # seconds
     max_retry_attempts = 3  # attempts
 
+    # Chatbot
+    ner_and_intent_training_data_path = 'src/data/intent_and_ner/Intent Training Examples_JL.xlsx'
+    intent_training_num_cv = 5
+    target_entities = 'J L'  # Each entity is separated by a space in a single string
+    ner_model_path = 'src/models/ner/ner-model.ser.gz'
+    ner_jar_path = 'logs/ner/stanford-ner-2018-10-16/stanford-ner.jar'
+    default_interpreter_output_path = 'src/pipeline/serialized_models/interpreter.pkl'
     valid_intents = {
         'small_talk': 'Smalltalk',
         'end_of_conversation': 'Conclusions',
         '[job]_in_[location]': '[JOB]_in_[LOCATION]',
-        '[skills]_for_[job]': 'skills_for_[JOB]'
+        'skills_for_[job]': 'skills_for_[JOB]'
+    }
+
+    # Smalltalk
+    interact_config = {
+        'max_history': 2,
+        'max_length': 20,
+        'min_length': 1,
+        'temperature': 0.7,
+        'top_k': 0,
+        'top_p': 0.9,
+        'no_sample': False,
+        'random_pause': None
     }
