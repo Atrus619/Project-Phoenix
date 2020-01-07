@@ -25,6 +25,8 @@ chat_bot = ChatBot(interpreter=interpreter,
 
 # Interact
 chat_bot.interact()
+
+# Turn off
 interpreter.kill_BaaS()
 
 # Debugging
