@@ -10,26 +10,42 @@ def utterances_to_tokens(path):
     :param path: Path to excel sheet
     :return: Modifies excel sheet in place. Returns True if successful.
     """
-    df = pd.read_excel(path, sheet_name='TrainingExamples')
+    book = load_workbook(path)
+    assert 'TrainingExamples' in book.sheetnames
 
+    df = pd.read_excel(path, sheet_name='TrainingExamples')
     new_df = pd.DataFrame(columns=['OG_Text', 'Token', 'Label'])
 
+    # If Tokens sheet already exists, reuse what has already been filled out
+    if 'Tokens' in book.sheetnames:
+        old_tokens = pd.read_excel(path, sheet_name='Tokens')
+        # Only copy over tokens that exist in the current list of training examples
+        previously_tokenized_phrases = set(df.TrainingExample)
+        reused_tokens = old_tokens[old_tokens.OG_Text.isin(previously_tokenized_phrases)]
+
+        new_df = new_df.append(reused_tokens)
+        new_df = new_df.fillna('')
+        existing_phrases = set(new_df.OG_Text)
+    else:
+        existing_phrases = {}
+
     for i, example in df.iterrows():
-        tokens = nltk.word_tokenize(example[1])
-        for token in tokens:
+        if example[1] not in existing_phrases:
+            tokens = nltk.word_tokenize(example[1])
+            for token in tokens:
+                new_df = new_df.append(pd.DataFrame({
+                    'OG_Text': [example[1]],
+                    'Token': [token],
+                    'Label': ['O']
+                }))
+            # Stanford NER requires separating each phrase with a blank space row
             new_df = new_df.append(pd.DataFrame({
                 'OG_Text': [example[1]],
-                'Token': [token],
-                'Label': ['O']
+                'Token': [''],
+                'Label': ['']
             }))
-        new_df = new_df.append(pd.DataFrame({
-            'OG_Text': [example[1]],
-            'Token': [''],
-            'Label': ['']
-        }))
 
-    book = load_workbook(path)
-
+    # Overwrite file with new sheet Tokens
     if 'Tokens' in book.sheetnames:
         del book['Tokens']
 
