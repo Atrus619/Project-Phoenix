@@ -1,15 +1,20 @@
 import pandas as pd
 import nltk
 from openpyxl import load_workbook
-from argparse import ArgumentParser
+from prefect import task, utilities
+from config import Config as cfg
 
 
+@task
 def utterances_to_tokens(path):
     """
     Adds a sheet to excel file containing utterances for training intent classifier for the purpose of creating labels for NER
     :param path: Path to excel sheet
+    :param logger: Optional logger
     :return: Modifies excel sheet in place. Returns True if successful.
     """
+    logger = utilities.logging.get_logger(cfg.chat_bot_training_log_name)
+
     book = load_workbook(path)
     assert 'TrainingExamples' in book.sheetnames
 
@@ -17,11 +22,15 @@ def utterances_to_tokens(path):
     new_df = pd.DataFrame(columns=['OG_Text', 'Token', 'Label'])
 
     # If Tokens sheet already exists, reuse what has already been filled out
+    reused_tokens = None
     if 'Tokens' in book.sheetnames:
         old_tokens = pd.read_excel(path, sheet_name='Tokens')
+        logger.info(f'{old_tokens.shape[0]} tokens found in existing worksheet. Transferring over prior entries that remain in TrainingExamples sheet.')
+
         # Only copy over tokens that exist in the current list of training examples
         previously_tokenized_phrases = set(df.TrainingExample)
         reused_tokens = old_tokens[old_tokens.OG_Text.isin(previously_tokenized_phrases)]
+        logger.info(f'{reused_tokens.shape[0]} / {old_tokens.shape[0]} previously labeled tokens retained.')
 
         new_df = new_df.append(reused_tokens)
         new_df = new_df.fillna('')
@@ -45,6 +54,9 @@ def utterances_to_tokens(path):
                 'Label': ['']
             }))
 
+    new_entries = new_df.shape[0] - (reused_tokens.shape[0] if reused_tokens is not None else 0)
+    logger.info(f'{new_entries} new token entries added to Tokens sheet.')
+
     # Overwrite file with new sheet Tokens
     if 'Tokens' in book.sheetnames:
         del book['Tokens']
@@ -54,13 +66,6 @@ def utterances_to_tokens(path):
         new_df.to_excel(writer, sheet_name='Tokens', index=False)
         writer.save()
 
+    logger.info(f'Conversion of utterances to tokens successful. Please refer to updated file at {path}.')
+
     return
-
-
-if __name__ == "__main__":
-    parser = ArgumentParser()
-    parser.add_argument("--path", type=str, default="", help="Path to the excel file containing training examples for intent classification.")
-    args = parser.parse_args()
-
-    utterances_to_tokens(path=args.path)
-    print(f'Conversion of utterances to tokens successful. Please refer to updated file at {args.path}.')
