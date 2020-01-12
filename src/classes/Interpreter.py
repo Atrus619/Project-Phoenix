@@ -1,9 +1,9 @@
 from bert_serving.client import BertClient
 import subprocess
-from collections import Counter, defaultdict
+from collections import Counter
 import nltk
 import pandas as pd
-from sklearn.model_selection import GridSearchCV
+from sklearn.model_selection import GridSearchCV, cross_val_predict
 from sklearn.svm import SVC
 import os
 import pickle as pkl
@@ -14,7 +14,7 @@ class Interpreter:
     """
     Processes messages from the user using specific NLP models
     """
-    def __init__(self, ner_tagger, target_entities):
+    def __init__(self, ner_tagger=None, target_entities=None):
         self.ner_tagger = ner_tagger
         self.target_entities = target_entities
 
@@ -125,9 +125,33 @@ class Interpreter:
         self.entity_classifier = GridSearchCV(
             SVC(C=1, probability=True, class_weight='balanced'),
             param_grid=params, n_jobs=-1, cv=num_cv_folds, scoring='f1_weighted', verbose=1)
+
         self.entity_classifier.fit(X, y)
 
-    def save(self, path):
+    def eval_trained_model(self, X, y, num_cv_folds):
+        assert self.entity_classifier, 'Model must already be trained'
+
+        if 'best_estimator_' in dir(self.entity_classifier):
+            clf = self.entity_classifier.best_estimator_
+        else:
+            clf = self.entity_classifier
+
+        return cross_val_predict(clf, X, y, cv=num_cv_folds)
+
+    def save_dict(self, path):
         self.kill_BaaS()
+        out_dict = {
+            'entity_classifier': self.entity_classifier.best_estimator_,
+            'ner_tagger': self.ner_tagger,
+            'target_entities': self.target_entities
+        }
         with open(path, 'wb') as f:
-            pkl.dump(self, f)
+            pkl.dump(out_dict, f)
+
+    def load_dict(self, path):
+        with open(path, 'rb') as f:
+            in_dict = pkl.load(f)
+
+        self.entity_classifier = in_dict['entity_classifier']
+        self.ner_tagger = in_dict['ner_tagger']
+        self.target_entities = in_dict['target_entities']

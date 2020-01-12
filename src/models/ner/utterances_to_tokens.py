@@ -14,6 +14,7 @@ def utterances_to_tokens(path):
     :return: Modifies excel sheet in place. Returns True if successful.
     """
     logger = utilities.logging.get_logger(cfg.chat_bot_training_log_name)
+    logger.info(f'----- Processing input excel sheet from {path} to convert utterances to tokens -----')
 
     book = load_workbook(path)
     assert 'TrainingExamples' in book.sheetnames
@@ -66,6 +67,6 @@ def utterances_to_tokens(path):
         new_df.to_excel(writer, sheet_name='Tokens', index=False)
         writer.save()
 
-    logger.info(f'Conversion of utterances to tokens successful. Please refer to updated file at {path}.')
+    logger.info(f'----- Conversion of utterances to tokens successful. Please refer to updated file at {path}. -----')
 
     return

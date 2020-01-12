@@ -2,7 +2,6 @@ import pandas as pd
 import os
 from sklearn.model_selection import GroupKFold
 from sklearn.metrics import classification_report
-import pickle as pkl
 from config import Config as cfg
 from prefect import task, utilities
 
@@ -13,7 +12,6 @@ def train_ner(data_path=cfg.ner_and_intent_training_data_path,
               ner_jar_path=cfg.ner_jar_path,
               output_path=cfg.ner_model_path,
               num_folds=cfg.ner_training_num_cv,
-              oof_metrics_path=cfg.ner_oof_metrics_path,
               training_folder=cfg.ner_training_folder,
               full_train_path=cfg.ner_full_train_path):
     """
@@ -48,8 +46,8 @@ def train_ner(data_path=cfg.ner_and_intent_training_data_path,
 
         df.to_csv(full_train_path, columns=['Token', 'Label'], sep='\t', index=False, header=False)
 
-    def ner_train_test_cv(num_folds, ner_jar_path, output_path, prop_path, oof_metrics_path, full_train_path):
-        oof_metrics = []
+    def ner_train_test_cv(num_folds, ner_jar_path, output_path, prop_path, full_train_path):
+        oof_metrics = {'predictions': [], 'labels': []}
         for i in range(num_folds):
             train_path = os.path.join(training_folder, f'fold_{i+1}', 'train.tsv')
             test_path = os.path.join(training_folder, f'fold_{i+1}', 'test.tsv')
@@ -71,15 +69,16 @@ def train_ner(data_path=cfg.ner_and_intent_training_data_path,
             # Compute statistics on fold
             predictions = pd.read_csv(predict_path, sep='/', lineterminator=' ', header=None, names=['Token', 'Prediction'])
             predictions = predictions[~predictions.Token.isin(["''", "\n"])]
+            oof_metrics['predictions'] += predictions.Prediction.values.tolist()
 
             labels = pd.read_csv(label_path, names=['Token', 'Label'], sep='\t')
             labels = labels.dropna()
+            oof_metrics['labels'] += labels.Label.values.tolist()
 
-            oof_metrics.append(classification_report(labels.Label, predictions.Prediction, output_dict=True))
+            # Too much information, can uncomment if desired
+            # logger.info(f'\nCV Fold {i+1}:\n' + classification_report(labels.Label.values, predictions.Prediction.values))
 
-        # TODO: Come back here when training on actual examples to decide what to do with this object. Add a method to print out evaluation across all folds.
-        with open(oof_metrics_path, 'wb') as f:
-            pkl.dump(oof_metrics, f)
+        logger.info(f'\nOut-of-fold metrics across all folds:\n' + classification_report(oof_metrics["labels"], oof_metrics["predictions"]))
 
         # Train model on full data
         os.system(f'java -cp {ner_jar_path} edu.stanford.nlp.ie.crf.CRFClassifier '
@@ -88,16 +87,17 @@ def train_ner(data_path=cfg.ner_and_intent_training_data_path,
                   f'-prop {prop_path}')
 
     # Run UDFs
+    logger.info('----- Training Named Entity Recognition (NER) Model -----')
     logger.info('Generating training files for NER training.')
     create_training_files(data_path=data_path,
                           num_folds=num_folds,
                           training_folder=training_folder,
                           full_train_path=full_train_path)
 
-    logger.info(f'Implementing {num_folds} cross-validation to train NER model.')
+    logger.info(f'Implementing {num_folds}-fold cross-validation to train NER model.')
     ner_train_test_cv(num_folds=num_folds,
                       ner_jar_path=ner_jar_path,
                       output_path=output_path,
                       prop_path=prop_path,
-                      oof_metrics_path=oof_metrics_path,
                       full_train_path=full_train_path)
+    logger.info('----- NER Training Complete. -----')
