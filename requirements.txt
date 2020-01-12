@@ -1,5 +1,5 @@
 absl-py==0.8.1
-apex==0.1
+# apex==0.1
 arrow==0.14.2
 astor==0.8.0
 beautifulsoup4==4.7.1
@@ -20,7 +20,7 @@ dask==2.9.1
 distributed==2.9.1
 docker==4.1.0
 docutils==0.15.2
-en-core-web-sm==2.2.0
+# en-core-web-sm==2.2.0
 et-xmlfile==1.0.1
 fsspec==0.6.2
 ftfy==5.6

@@ -8,6 +8,7 @@ from sklearn.svm import SVC
 import os
 import pickle as pkl
 import zmq
+from config import Config as cfg
 
 
 class Interpreter:
@@ -37,10 +38,10 @@ class Interpreter:
             self.kill_BaaS()
 
         try:
-            subprocess.Popen(['bert-serving-start', '-model_dir', 'logs/bert/cased_L-24_H-1024_A-16/', '-num_worker', '1'])
+            subprocess.Popen(['bert-serving-start', '-model_dir', cfg.bert_dir, '-num_worker', '1'])
         except zmq.error.ZMQError:
             self.kill_BaaS()
-            subprocess.Popen(['bert-serving-start', '-model_dir', 'logs/bert/cased_L-24_H-1024_A-16/', '-num_worker', '1'])
+            subprocess.Popen(['bert-serving-start', '-model_dir', cfg.bert_dir, '-num_worker', '1'])
 
         self.BaaS = BertClient()
 
