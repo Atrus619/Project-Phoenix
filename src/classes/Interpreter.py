@@ -14,14 +14,18 @@ class Interpreter:
     """
     Processes messages from the user using specific NLP models
     """
-    def __init__(self, ner_tagger=None, target_entities=None):
+    def __init__(self, ner_tagger=None, target_entities=None, remove_caps=True):
         self.ner_tagger = ner_tagger
         self.target_entities = target_entities
+        self.remove_caps = remove_caps
 
         self.BaaS = None
         self.entity_classifier = None
 
     def parse_user_msg(self, raw_text):
+        if self.remove_caps:
+            raw_text = raw_text.lower()
+
         latent_vector = self.preprocess_input_single(sentence=raw_text)
         recognized_entities = self.get_recognized_entities(sentence=raw_text)
         classified_intent = self.get_intent(sentence=raw_text)
@@ -143,7 +147,8 @@ class Interpreter:
         out_dict = {
             'entity_classifier': self.entity_classifier.best_estimator_,
             'ner_tagger': self.ner_tagger,
-            'target_entities': self.target_entities
+            'target_entities': self.target_entities,
+            'remove_caps': self.remove_caps
         }
         with open(path, 'wb') as f:
             pkl.dump(out_dict, f)
@@ -155,3 +160,4 @@ class Interpreter:
         self.entity_classifier = in_dict['entity_classifier']
         self.ner_tagger = in_dict['ner_tagger']
         self.target_entities = in_dict['target_entities']
+        self.remove_caps = in_dict['remove_caps']

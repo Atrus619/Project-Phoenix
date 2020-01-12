@@ -77,7 +77,6 @@ class Config:
 
     # Intent Training - see docstring in src/models/intent/train.py
     intent_training_num_cv = 5
-    target_entities = 'J L'  # Each entity is separated by a space in a single string
     # ner_model_path = 'src/models/ner/ner-model.ser.gz'  # Defined above in NER Training section
     # ner_jar_path = 'logs/ner/stanford-ner-2018-10-16/stanford-ner.jar'  # Defined above in NER Training section
     default_interpreter_dict_output_path = 'src/pipeline/serialized_models/interpreter_dict.pkl'
