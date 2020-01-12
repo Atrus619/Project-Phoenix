@@ -4,7 +4,7 @@ from nltk.tag.stanford import StanfordNERTagger
 from src.classes.Interpreter import Interpreter
 from config import Config as cfg
 from prefect import task, utilities
-import os
+from src.pipeline.utils import kill_BaaS_externally
 
 
 # Define helper routines
@@ -22,15 +22,7 @@ def get_target_entities(path, sheet_name):
     uniques = df.Label.unique()
     uniques = uniques[~pd.isnull(uniques)]
     uniques = uniques[uniques != 'O']
-    return ' '.join(uniques)
-
-
-def kill_BaaS_externally(obj, old_state, new_state):
-    if new_state.is_failed():
-        logger = utilities.logging.get_logger(cfg.chat_bot_training_log_name)
-        logger.info('Intent classifier training failed. Tearing down BaaS.')
-        os.system('pkill bert')
-    return new_state
+    return uniques
 
 
 @task(state_handlers=[kill_BaaS_externally])
@@ -38,7 +30,8 @@ def train_intent_and_initialize_interpreter(data_path=cfg.ner_and_intent_trainin
                                             ner_model_path=cfg.ner_model_path,  # Path to pre-trained NER model file. Should have a .ser.gz extension.
                                             ner_jar_path=cfg.ner_jar_path,  # Path to NER jar file. Should have a .jar extension.
                                             num_cv_folds=cfg.intent_training_num_cv,  # Number of folds to use for cross-validation
-                                            output_path=cfg.default_interpreter_dict_output_path):  # Desired output path for model. Should end in [model_name].pkl
+                                            output_path=cfg.default_interpreter_dict_output_path,  # Desired output path for model. Should end in [model_name].pkl
+                                            remove_caps=True):  # Whether to remove caps upon parsing raw text. Should be the same as how the NER classifier was trained
 
     logger = utilities.logging.get_logger(cfg.chat_bot_training_log_name)
     logger.info('----- Training Intent Classifier and Initializing Interpreter Class -----')
@@ -48,7 +41,7 @@ def train_intent_and_initialize_interpreter(data_path=cfg.ner_and_intent_trainin
     data = load_data(path=data_path, sheet_name='TrainingExamples')
     target_entities = get_target_entities(path=data_path, sheet_name='Tokens')
     ner_tagger = get_ner_tagger(ner_model_path=ner_model_path, jar_path=ner_jar_path)
-    interpreter = Interpreter(ner_tagger=ner_tagger, target_entities=target_entities)
+    interpreter = Interpreter(ner_tagger=ner_tagger, target_entities=target_entities, remove_caps=remove_caps)
     interpreter.init_BaaS()
 
     # Preprocess features from NER model by counting occurrence of each non-O entity and adding as features
@@ -74,6 +67,7 @@ def train_intent_and_initialize_interpreter(data_path=cfg.ner_and_intent_trainin
     logger.info('\n' + classification_report(data.Intent, out_of_fold_predictions))
 
     interpreter.save_dict(output_path)
+    interpreter.kill_BaaS()
 
     logger.info(f'Model dict successfully exported to {output_path}.')
     logger.info('----- Intent classifier successfully trained and interpreter successfully initialized and serialized -----')

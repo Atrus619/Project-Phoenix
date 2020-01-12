@@ -6,10 +6,12 @@ from config import Config as cfg
 
 
 @task
-def utterances_to_tokens(path):
+def utterances_to_tokens(path, reuse_existing=True, remove_caps=True):
     """
     Adds a sheet to excel file containing utterances for training intent classifier for the purpose of creating labels for NER
-    :param path: Path to excel sheet
+    :param path: String, Path to excel sheet
+    :param reuse_existing: Boolean, Whether to reuse existing annotations if present
+    :param remove_caps: Boolean, Whether to convert text to lower case
     :param logger: Optional logger
     :return: Modifies excel sheet in place. Returns True if successful.
     """
@@ -24,7 +26,7 @@ def utterances_to_tokens(path):
 
     # If Tokens sheet already exists, reuse what has already been filled out
     reused_tokens = None
-    if 'Tokens' in book.sheetnames:
+    if 'Tokens' in book.sheetnames and reuse_existing:
         old_tokens = pd.read_excel(path, sheet_name='Tokens')
         logger.info(f'{old_tokens.shape[0]} tokens found in existing worksheet. Transferring over prior entries that remain in TrainingExamples sheet.')
 
@@ -41,7 +43,11 @@ def utterances_to_tokens(path):
 
     for i, example in df.iterrows():
         if example[1] not in existing_phrases:
-            tokens = nltk.word_tokenize(example[1])
+            if remove_caps:
+                text = example[1].lower()
+            else:
+                text = example[1]
+            tokens = nltk.word_tokenize(text)
             for token in tokens:
                 new_df = new_df.append(pd.DataFrame({
                     'OG_Text': [example[1]],
