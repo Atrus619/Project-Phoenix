@@ -66,19 +66,19 @@ if __name__ == "__main__":
     parser.add_argument("--path", type=str, default=cfg.ner_and_intent_training_data_path,
                         help="Path to the excel file containing training examples for intent classification.")
 
-    reuse_existing_help = 'Whether to reuse existing entries in the training file. Defaults to True.'
-    parser.add_argument("--reuse_existing", dest='reuse_existing', action='store_true', help=reuse_existing_help)
-    parser.add_argument("--overwrite_existing", dest='reuse_existing', action='store_false', help=reuse_existing_help)
+    reuse_existing_help = 'Whether to reuse existing entries in the training file.'
+    parser.add_argument("--reuse_existing", dest='reuse_existing', action='store_true', help=reuse_existing_help + ' On by default.')
+    parser.add_argument("--overwrite_existing", dest='reuse_existing', action='store_false', help=reuse_existing_help + ' Off by default.')
 
-    remove_caps_help = 'Whether to apply lower case to all characters fed to the training examples and associated interpreter model. Defaults to True.'
-    parser.add_argument("--remove_caps", dest='remove_caps', action='store_true', help=remove_caps_help)
-    parser.add_argument("--keep_caps", dest='remove_caps', action='store_false', help=remove_caps_help)
+    remove_caps_help = 'Whether to apply lower case to all characters fed to the training examples and associated interpreter model.'
+    parser.add_argument("--remove_caps", dest='remove_caps', action='store_true', help=remove_caps_help + ' On by default.')
+    parser.add_argument("--keep_caps", dest='remove_caps', action='store_false', help=remove_caps_help + ' Off by default.')
 
     parser.add_argument("--spawn_chatbot", dest='spawn_chatbot', action='store_true',
-                        help='Whether to spawn the chatbot immediately after training to begin testing. Defaults to False.')
+                        help='Whether to spawn the chatbot immediately after training to begin testing. Off by default.')
 
     parser.add_argument("--add_conv_detail", dest='add_conv_detail', action='store_true',
-                        help="Whether to print out the full conversation at the end with annotations by the chatbot's interpreter. Defaults to False.")
+                        help="Whether to print out the full conversation at the end with annotations by the chatbot's interpreter. Off by default.")
 
     parser.set_defaults(reuse_existing=True, remove_caps=True, spawn_chatbot=False, add_conv_detail=False)
     args = parser.parse_args()
