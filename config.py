@@ -66,10 +66,11 @@ class Config:
     # Chatbot
     chat_bot_training_log_name = 'chat_bot_training'
     ner_and_intent_training_data_path = 'src/data/intent_and_ner/Intent Training Examples_JL.xlsx'
+    bert_dir = 'downloads/cased_L-24_H-1024_A-16/'
+    ner_jar_path = 'downloads/stanford-ner.jar'
 
     # NER Training - see docstring in src/models/ner/train.py
     ner_prop_path = 'src/models/ner/config.prop'
-    ner_jar_path = 'logs/ner/stanford-ner-2018-10-16/stanford-ner.jar'
     ner_model_path = 'src/pipeline/serialized_models/ner-model.ser.gz'
     ner_training_num_cv = 5
     ner_training_folder = 'logs/ner/cv'
