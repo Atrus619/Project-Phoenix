@@ -71,7 +71,6 @@ class Config:
     ner_prop_path = 'src/models/ner/config.prop'
     ner_jar_path = 'logs/ner/stanford-ner-2018-10-16/stanford-ner.jar'
     ner_model_path = 'src/pipeline/serialized_models/ner-model.ser.gz'
-    ner_oof_metrics_path = 'logs/ner/cv/oof_metrics.pkl'
     ner_training_num_cv = 5
     ner_training_folder = 'logs/ner/cv'
     ner_full_train_path = os.path.join(ner_training_folder, 'full_train.tsv')
@@ -81,7 +80,7 @@ class Config:
     target_entities = 'J L'  # Each entity is separated by a space in a single string
     # ner_model_path = 'src/models/ner/ner-model.ser.gz'  # Defined above in NER Training section
     # ner_jar_path = 'logs/ner/stanford-ner-2018-10-16/stanford-ner.jar'  # Defined above in NER Training section
-    default_interpreter_output_path = 'src/pipeline/serialized_models/interpreter.pkl'
+    default_interpreter_dict_output_path = 'src/pipeline/serialized_models/interpreter_dict.pkl'
     valid_intents = {
         'small_talk': 'Smalltalk',
         'end_of_conversation': 'Conclusions',
