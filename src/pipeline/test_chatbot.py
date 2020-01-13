@@ -6,11 +6,14 @@ import src.models.SmallTalk.utils as stu
 from config import Config as cfg
 from src.pipeline.utils import kill_BaaS_externally
 from prefect import task, utilities
+import numpy as np
+import time
 
 
 @task(state_handlers=[kill_BaaS_externally])
 def test_chatbot(interpreter_dict_path=cfg.default_interpreter_dict_output_path,
-                 add_conv_detail=False):
+                 add_conv_detail=False,
+                 response_delay=2):
     # Interpreter, pretrained elsewhere
     interpreter = Interpreter()
     interpreter.load_dict(interpreter_dict_path)
@@ -21,7 +24,11 @@ def test_chatbot(interpreter_dict_path=cfg.default_interpreter_dict_output_path,
     small_talk = SmallTalk(name='Test_SmallTalk_Pretrained', model_type='openai-gpt', model_name=dir, opt_level='O1')
 
     # Policy
-    policy = Policy(small_talk=small_talk)
+    def delay_func():
+        return time.sleep(np.clip(np.random.normal(response_delay, response_delay / 2), 0, response_delay * 2))
+
+    policy = Policy(small_talk=small_talk,
+                    delay_func=delay_func)
     # small_talk.print_personality(policy.small_talk_personality)
 
     # ChatBot

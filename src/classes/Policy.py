@@ -1,6 +1,6 @@
 import time
-import random
 from config import Config as cfg
+import numpy as np
 
 
 class Policy:
@@ -8,7 +8,7 @@ class Policy:
     Defines how the chatbot responds to the user, calling appropriate external functionality as needed
     """
 
-    def __init__(self, small_talk, delay_func=lambda: time.sleep(random.random() * 2 + 1), small_talk_personality=None):
+    def __init__(self, small_talk, delay_func=lambda: time.sleep(np.clip(np.random.normal(2, 1), 0, 4)), small_talk_personality=None):
         self.small_talk = small_talk
         self.small_talk_personality = self.small_talk.get_personality(personality=small_talk_personality)
 
@@ -23,9 +23,7 @@ class Policy:
         if intent == cfg.valid_intents['end_of_conversation']:
             reply = self.get_final_msg()
         elif intent == cfg.valid_intents['small_talk']:
-            reply = self.small_talk.get_reply(conversation_history=conversation_history,
-                                              personality=self.small_talk_personality,
-                                              **cfg.interact_config)
+            reply = self.get_reply_small_talk(conversation_history=conversation_history)
         elif intent == cfg.valid_intents['[job]_in_[location]']:
             reply = self.get_reply_job_in_location(recognized_entities=recognized_entities)
         elif intent == cfg.valid_intents['skills_for_[job]']:
@@ -46,7 +44,9 @@ class Policy:
                "don't hesitate to reach out to me at xxx@xxx.com. Enjoy the rest of your day!"
 
     def get_reply_small_talk(self, conversation_history):
-        pass
+        return self.small_talk.get_reply(conversation_history=conversation_history,
+                                         personality=self.small_talk_personality,
+                                         **cfg.interact_config)
 
     def get_reply_job_in_location(self, recognized_entities):
         assert recognized_entities is not None
