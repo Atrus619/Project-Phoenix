@@ -13,13 +13,15 @@ from src.pipeline.utils import clear_tmps
 from config import Config as cfg
 
 
+# TODO: Allow better handling of unexpected conditions in chatbot. Build an additional intent classifier that will determine if person is answering follow-up question or saying never mind.
 # TODO: [Optional] Add a horrific number of optional cl args
 def make_flow(title='train_all',
               path=cfg.ner_and_intent_training_data_path,
               reuse_existing=True,
               remove_caps=True,
               spawn_chatbot=False,
-              add_conv_detail=False):
+              add_conv_detail=False,
+              response_delay=False):
     with Flow(title) as flow:
         # Set up logger
         logger = utilities.logging.get_logger(cfg.chat_bot_training_log_name)
@@ -49,6 +51,7 @@ def make_flow(title='train_all',
         if spawn_chatbot:
             status_spawn_chatbot = test_chatbot(interpreter_dict_path=cfg.default_interpreter_dict_output_path,
                                                 add_conv_detail=add_conv_detail,
+                                                response_delay=response_delay,
                                                 upstream_tasks=[status_train_intent_and_initialize_interpreter])
             clear_tmps(upstream_tasks=[status_spawn_chatbot])
         else:
@@ -80,7 +83,10 @@ if __name__ == "__main__":
     parser.add_argument("--add_conv_detail", dest='add_conv_detail', action='store_true',
                         help="Whether to print out the full conversation at the end with annotations by the chatbot's interpreter. Off by default.")
 
-    parser.set_defaults(reuse_existing=True, remove_caps=True, spawn_chatbot=False, add_conv_detail=False)
+    parser.add_argument("--response_delay", type=int, default=2,
+                        help='Number of seconds to add as a stochastic artifical delay for chat bot. Defaults to 2 seconds.')
+
+    parser.set_defaults(reuse_existing=True, remove_caps=True, spawn_chatbot=False, add_conv_detail=False, reponse_delay=False)
     args = parser.parse_args()
 
     # Create flow
