@@ -50,19 +50,19 @@ def train_intent_and_initialize_interpreter(data_path=cfg.ner_and_intent_trainin
 
     # Train with GridSearchCV and return best model
     logger.info('Training model.')
-    interpreter.train_SVC(X=X, y=data.Intent, num_cv_folds=num_cv_folds)
+    interpreter.intent_classifier = interpreter.train_SVM(X=X, y=data.Intent, num_cv_folds=num_cv_folds)
 
     # Export
     logger.info(
-        f'Model training complete. In-sample score is {interpreter.entity_classifier.score(X, data.Intent):.2f} '
-        f'and out-of-sample score is {interpreter.entity_classifier.best_score_:.2f}.'
+        f'Model training complete. In-sample score is {interpreter.intent_classifier.score(X, data.Intent):.2f} '
+        f'and out-of-sample score is {interpreter.intent_classifier.best_score_:.2f}.'
     )
 
-    in_sample_predictions = interpreter.entity_classifier.predict(X)
+    in_sample_predictions = interpreter.intent_classifier.predict(X)
     logger.info('In-Sample Classification Report:')
     logger.info('\n' + classification_report(data.Intent, in_sample_predictions))
 
-    out_of_fold_predictions = interpreter.eval_trained_model(X=X, y=data.Intent, num_cv_folds=num_cv_folds)
+    out_of_fold_predictions = interpreter.eval_trained_model(model=interpreter.intent_classifier, X=X, y=data.Intent, num_cv_folds=num_cv_folds)
     logger.info('Out-of-Sample Classification Report:')
     logger.info('\n' + classification_report(data.Intent, out_of_fold_predictions))
 
@@ -71,3 +71,42 @@ def train_intent_and_initialize_interpreter(data_path=cfg.ner_and_intent_trainin
 
     logger.info(f'Model dict successfully exported to {output_path}.')
     logger.info('----- Intent classifier successfully trained and interpreter successfully initialized and serialized -----')
+
+
+@task(state_handlers=[kill_BaaS_externally])
+def train_intent_follow_up(data_path=cfg.ner_and_intent_training_data_path,
+                           interpreter_dict_path=cfg.default_interpreter_dict_output_path,
+                           num_cv_folds=cfg.intent_follow_up_training_num_cv):
+    logger = utilities.logging.get_logger(cfg.chat_bot_training_log_name)
+    logger.info('----- Training Intent Follow Up Model -----')
+
+    # Initialize pretrained interpreter
+    logger.info('Initializing pretrained interpreter.')
+    interpreter = Interpreter()
+    interpreter.load_dict(interpreter_dict_path)
+    interpreter.init_BaaS()
+
+    # Load in training data
+    logger.info('Loading in data and preprocessing.')
+    data = load_data(path=data_path, sheet_name='Intent_Follow_Up_Training_Examples')
+    X = interpreter.preprocess_input_batch(sentences=data.TrainingExample)
+
+    # Train model using built-in method
+    logger.info('Training model.')
+    interpreter.intent_follow_up_classifier = interpreter.train_SVM(X=X, y=data.Intent, num_cv_folds=num_cv_folds)
+
+    # Output classification report
+    in_sample_predictions = interpreter.intent_follow_up_classifier.predict(X)
+    logger.info('In-Sample Classification Report:')
+    logger.info('\n' + classification_report(data.Intent, in_sample_predictions))
+
+    out_of_fold_predictions = interpreter.eval_trained_model(model=interpreter.intent_follow_up_classifier, X=X, y=data.Intent, num_cv_folds=num_cv_folds)
+    logger.info('Out-of-Sample Classification Report:')
+    logger.info('\n' + classification_report(data.Intent, out_of_fold_predictions))
+
+    # Re-serialize model
+    interpreter.save_dict(interpreter_dict_path)
+    interpreter.kill_BaaS()
+
+    logger.info(f'Model dict successfully exported to {interpreter_dict_path}.')
+    logger.info('----- Intent follow-up classifier successfully trained and interpreter successfully re-serialized -----')

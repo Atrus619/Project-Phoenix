@@ -17,10 +17,7 @@ class ChatBot:
         print(opening_msg)
 
         while True:
-            raw_text = input('>>> ')
-            while not raw_text:
-                print('Please enter in a non-empty value.')
-                raw_text = input('>>> ')
+            raw_text = self.seek_input_from_user()
 
             # Parse and update based on user input
             self.conversation_history.add_parsed_user_msg(*self.interpreter.parse_user_msg(raw_text=raw_text))
@@ -33,3 +30,18 @@ class ChatBot:
             # Check if exit condition reached and break
             if self.conversation_history.user_msgs[-1].classified_intent == cfg.valid_intents['end_of_conversation']:
                 break
+
+            # Check if additional information was sought and continue asking until all information determined for request
+            if self.policy.is_seeking_additional_info():
+                while True:
+                    raw_text = self.seek_input_from_user()
+                    # TODO: Continue here with seeking additional information
+
+
+    @staticmethod
+    def seek_input_from_user():
+        raw_text = input('>>> ')
+        while not raw_text:
+            print('Please enter in a non-empty value.')
+            raw_text = input('>>> ')
+        return raw_text
