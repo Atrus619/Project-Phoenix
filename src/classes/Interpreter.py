@@ -21,7 +21,8 @@ class Interpreter:
         self.remove_caps = remove_caps
 
         self.BaaS = None
-        self.entity_classifier = None
+        self.intent_classifier = None
+        self.intent_follow_up_classifier = None
 
     def parse_user_msg(self, raw_text):
         if self.remove_caps:
@@ -57,7 +58,7 @@ class Interpreter:
 
     def get_recognized_entities(self, sentence):
         tagged_sentence = self.tag_ner(sentence)
-        entity_features = self.get_entity_features_single(sentence)
+        entity_features = self.get_features_single(sentence)
 
         output_dict = dict()
         for entity_feature in entity_features:
@@ -84,12 +85,12 @@ class Interpreter:
         return output_dict
 
     def get_intent(self, sentence):
-        assert self.entity_classifier is not None, "Entity classifier not yet trained"
+        assert self.intent_classifier is not None, "Entity classifier not yet trained"
 
         latent_vector = self.preprocess_input_single(sentence)
-        return self.entity_classifier.predict(latent_vector).item()
+        return self.intent_classifier.predict(latent_vector).item()
 
-    def get_entity_features_single(self, sentence):
+    def get_features_single(self, sentence):
         counter = self.count_ner(self.tag_ner(sentence))
         output_dict = dict()
 
@@ -98,7 +99,7 @@ class Interpreter:
 
         return pd.DataFrame(output_dict)
 
-    def get_entity_features_batch(self, sentences):
+    def get_features_batch(self, sentences):
         counters_series = sentences.apply(lambda x: self.count_ner(self.tag_ner(x)))
         output_dict = dict()
 
@@ -107,46 +108,57 @@ class Interpreter:
 
         return pd.DataFrame(output_dict)
 
-    def preprocess_input_single(self, sentence):
+    def preprocess_input_single(self, sentence, use_entity_features=True):
         if self.BaaS is None:
             self.init_BaaS()
+
         dense_vector = pd.DataFrame(self.BaaS.encode([sentence]))
-        entity_vector = self.get_entity_features_single(sentence)
 
-        return pd.concat([dense_vector, entity_vector], axis=1)
+        if use_entity_features:  # Calculate entity_features and return both, concatenated together
+            entity_vector = self.get_features_single(sentence)
+            return pd.concat([dense_vector, entity_vector], axis=1)
 
-    def preprocess_input_batch(self, sentences):
+        # Else just return the dense features alone
+        return dense_vector
+
+    def preprocess_input_batch(self, sentences, use_entity_features=True):
+        if self.BaaS is None:
+            self.init_BaaS()
+
         dense_features = pd.DataFrame(self.BaaS.encode(list(sentences)))
-        entity_features = self.get_entity_features_batch(sentences=sentences)
 
-        return pd.concat([dense_features, entity_features], axis=1)
+        if use_entity_features:  # Calculate entity_features and return both, concatenated together
+            entity_features = self.get_features_batch(sentences=sentences)
+            return pd.concat([dense_features, entity_features], axis=1)
 
-    def train_SVC(self, X, y, num_cv_folds):
+        # Else just return the dense features alone
+        return dense_features
+
+    @staticmethod
+    def train_SVM(X, y, num_cv_folds):
         params = {
             "C": [1, 2, 5, 10, 20, 100],
             "kernel": ["linear"]
         }
 
-        self.entity_classifier = GridSearchCV(
+        model = GridSearchCV(
             SVC(C=1, probability=True, class_weight='balanced'),
             param_grid=params, n_jobs=-1, cv=num_cv_folds, scoring='f1_weighted', verbose=1)
 
-        self.entity_classifier.fit(X, y)
+        model.fit(X, y)
 
-    def eval_trained_model(self, X, y, num_cv_folds):
-        assert self.entity_classifier, 'Model must already be trained'
+        return model.best_estimator_
 
-        if 'best_estimator_' in dir(self.entity_classifier):
-            clf = self.entity_classifier.best_estimator_
-        else:
-            clf = self.entity_classifier
-
-        return cross_val_predict(clf, X, y, cv=num_cv_folds)
+    @staticmethod
+    def eval_trained_model(model, X, y, num_cv_folds):
+        assert model, 'Model must already be trained'
+        return cross_val_predict(model, X, y, cv=num_cv_folds)
 
     def save_dict(self, path):
         self.kill_BaaS()
         out_dict = {
-            'entity_classifier': self.entity_classifier.best_estimator_,
+            'intent_classifier': self.intent_classifier,
+            'intent_follow_up_classifier': self.intent_follow_up_classifier,
             'ner_tagger': self.ner_tagger,
             'target_entities': self.target_entities,
             'remove_caps': self.remove_caps
@@ -158,7 +170,8 @@ class Interpreter:
         with open(path, 'rb') as f:
             in_dict = pkl.load(f)
 
-        self.entity_classifier = in_dict['entity_classifier']
+        self.intent_classifier = in_dict['intent_classifier']
+        self.intent_follow_up_classifier = in_dict['intent_follow_up_classifier']
         self.ner_tagger = in_dict['ner_tagger']
         self.target_entities = in_dict['target_entities']
         self.remove_caps = in_dict['remove_caps']

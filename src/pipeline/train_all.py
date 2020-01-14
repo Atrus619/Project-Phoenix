@@ -13,7 +13,9 @@ from src.pipeline.utils import clear_tmps
 from config import Config as cfg
 
 
-# TODO: Allow better handling of unexpected conditions in chatbot. Build an additional intent classifier that will determine if person is answering follow-up question or saying never mind.
+# TODO: Turn entities and intents into special class or enum data type
+# TODO: Allow better handling of unexpected conditions in chatbot.
+#  Build an additional intent classifier that will determine if person is answering follow-up question or saying never mind.
 # TODO: [Optional] Add a horrific number of optional cl args
 def make_flow(title='train_all',
               path=cfg.ner_and_intent_training_data_path,

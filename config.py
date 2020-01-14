@@ -78,6 +78,7 @@ class Config:
 
     # Intent Training - see docstring in src/models/intent/train.py
     intent_training_num_cv = 5
+    intent_follow_up_training_num_cv = 3
     # ner_model_path = 'src/models/ner/ner-model.ser.gz'  # Defined above in NER Training section
     # ner_jar_path = 'logs/ner/stanford-ner-2018-10-16/stanford-ner.jar'  # Defined above in NER Training section
     default_interpreter_dict_output_path = 'src/pipeline/serialized_models/interpreter_dict.pkl'
@@ -86,6 +87,12 @@ class Config:
         'end_of_conversation': 'Conclusions',
         '[job]_in_[location]': '[JOB]_in_[LOCATION]',
         'skills_for_[job]': 'skills_for_[JOB]'
+    }
+
+    # Entities
+    entities = {
+        'J': 'job',
+        'L': 'location'
     }
 
     # Smalltalk
