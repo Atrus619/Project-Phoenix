@@ -3,6 +3,7 @@ from config import Config as cfg
 import re
 import shutil
 from prefect import task, utilities
+from prefect.triggers import always_run
 
 
 def kill_BaaS_externally(obj, old_state, new_state):
@@ -13,7 +14,7 @@ def kill_BaaS_externally(obj, old_state, new_state):
     return new_state
 
 
-@task
+@task(trigger=always_run)
 def clear_tmps():
     # Clear all tmp folders in working directory
     tmp_pattern = '^tmp'

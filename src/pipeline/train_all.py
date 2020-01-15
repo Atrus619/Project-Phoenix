@@ -8,14 +8,14 @@ from src.models.ner.utterances_to_tokens import utterances_to_tokens
 from src.models.ner.allow_user_update_ner import allow_user_update_ner
 from src.models.ner.train import train_ner
 from src.models.intent.train import train_intent_and_initialize_interpreter
+from src.models.intent.train import train_intent_follow_up
 from src.pipeline.test_chatbot import test_chatbot
 from src.pipeline.utils import clear_tmps
 from config import Config as cfg
 
 
+# TODO: Optimize either the logs of BaaS or how often it is turned off and on (ideally just turn it on once and use for everything!)
 # TODO: Turn entities and intents into special class or enum data type
-# TODO: Allow better handling of unexpected conditions in chatbot.
-#  Build an additional intent classifier that will determine if person is answering follow-up question or saying never mind.
 # TODO: [Optional] Add a horrific number of optional cl args
 def make_flow(title='train_all',
               path=cfg.ner_and_intent_training_data_path,
@@ -42,22 +42,28 @@ def make_flow(title='train_all',
         # 2. Pause while user updates step in between here
         status_allow_user_update_ner = allow_user_update_ner(path=path, upstream_tasks=[status_utterances_to_tokens])
 
-        # 3. Train NER
+        # 3. Train NER Classifier
         status_train_ner = train_ner(data_path=path, upstream_tasks=[status_allow_user_update_ner])
 
-        # 4. Train Intent
+        # 4. Train Intent Classifier
         status_train_intent_and_initialize_interpreter = train_intent_and_initialize_interpreter(data_path=path, remove_caps=remove_caps,
                                                                                                  upstream_tasks=[status_train_ner])
 
-        # 5. Spawn Chatbot for testing if requested
+        # 5. Train Intent Follow Up Classifier
+        status_train_intent_follow_up = train_intent_follow_up(data_path=path, upstream_tasks=[status_train_intent_and_initialize_interpreter])
+
+        # Final task in case we add more
+        final_training_task = status_train_intent_follow_up
+
+        # 6. Spawn Chatbot for testing if requested
         if spawn_chatbot:
             status_spawn_chatbot = test_chatbot(interpreter_dict_path=cfg.default_interpreter_dict_output_path,
                                                 add_conv_detail=add_conv_detail,
                                                 response_delay=response_delay,
-                                                upstream_tasks=[status_train_intent_and_initialize_interpreter])
+                                                upstream_tasks=[final_training_task])
             clear_tmps(upstream_tasks=[status_spawn_chatbot])
         else:
-            clear_tmps(upstream_tasks=[status_train_intent_and_initialize_interpreter])
+            clear_tmps(upstream_tasks=[final_training_task])
 
     return flow
 
@@ -88,7 +94,7 @@ if __name__ == "__main__":
     parser.add_argument("--response_delay", type=int, default=2,
                         help='Number of seconds to add as a stochastic artifical delay for chat bot. Defaults to 2 seconds.')
 
-    parser.set_defaults(reuse_existing=True, remove_caps=True, spawn_chatbot=False, add_conv_detail=False, reponse_delay=False)
+    parser.set_defaults(reuse_existing=True, remove_caps=True, spawn_chatbot=False, add_conv_detail=False)
     args = parser.parse_args()
 
     # Create flow

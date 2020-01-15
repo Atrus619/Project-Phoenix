@@ -9,11 +9,15 @@ import os
 import pickle as pkl
 import zmq
 from config import Config as cfg
+from src.classes.utils import init_recognized_entities_dict
 
 
 class Interpreter:
     """
-    Processes messages from the user using specific NLP models
+    Processes messages from the user using specific NLP models.
+    Contains two models, intent_classifier and intent_follow_up_classifier.
+    Intent Classifier is for classifying general text.
+    Intent Follow-Up Classifier is for following up and collecting entities that were not collected by the NER component of the intent classifier.
     """
     def __init__(self, ner_tagger=None, target_entities=None, remove_caps=True):
         self.ner_tagger = ner_tagger
@@ -28,9 +32,25 @@ class Interpreter:
         if self.remove_caps:
             raw_text = raw_text.lower()
 
-        latent_vector = self.preprocess_input_single(sentence=raw_text)
+        latent_vector = self.preprocess_input_single(sentence=raw_text, use_entity_features=True)
         recognized_entities = self.get_recognized_entities(sentence=raw_text)
         classified_intent = self.get_intent(sentence=raw_text)
+
+        return raw_text, latent_vector, recognized_entities, classified_intent
+
+    def parse_user_msg_follow_up(self, raw_text, missing_entity):
+        if self.remove_caps:
+            raw_text = raw_text.lower()
+
+        latent_vector = self.preprocess_input_single(sentence=raw_text, use_entity_features=False)
+        classified_intent = self.get_intent_follow_up(sentence=raw_text)
+
+        recognized_entities = init_recognized_entities_dict()
+        if classified_intent == 'Acceptance':  # Use entire raw text as missing entity TODO: Clean up to extract just the piece we want?
+            recognized_entities[missing_entity].append(raw_text)
+        else:
+            # Just pass to return the empty, initialized recognized_entities dict
+            pass
 
         return raw_text, latent_vector, recognized_entities, classified_intent
 
@@ -53,16 +73,19 @@ class Interpreter:
     def tag_ner(self, sentence):
         return self.ner_tagger.tag(nltk.word_tokenize(sentence))
 
-    def count_ner(self, tagged_sentence):
+    @staticmethod
+    def count_ner(tagged_sentence):
         return Counter(tag[1] for tag in tagged_sentence)
 
     def get_recognized_entities(self, sentence):
+        # Output recognized entities is a dictionary.
+        # Key is entity letter ('J' for job, 'L' for location)
+        # Value is a list of recognized entities as strings, one string for each full recognized entity
         tagged_sentence = self.tag_ner(sentence)
         entity_features = self.get_features_single(sentence)
 
-        output_dict = dict()
+        output_dict = init_recognized_entities_dict()
         for entity_feature in entity_features:
-            output_dict[entity_feature] = []
             current_index = 0
 
             # Once IndexError is hit, it's time to move to next entity_feature
@@ -85,10 +108,16 @@ class Interpreter:
         return output_dict
 
     def get_intent(self, sentence):
-        assert self.intent_classifier is not None, "Entity classifier not yet trained"
+        assert self.intent_classifier is not None, "Intent classifier not yet trained"
 
-        latent_vector = self.preprocess_input_single(sentence)
+        latent_vector = self.preprocess_input_single(sentence=sentence, use_entity_features=True)
         return self.intent_classifier.predict(latent_vector).item()
+
+    def get_intent_follow_up(self, sentence):
+        assert self.intent_follow_up_classifier is not None, "Intent classifier follow up not yet trained"
+
+        latent_vector = self.preprocess_input_single(sentence=sentence, use_entity_features=False)
+        return self.intent_follow_up_classifier.predict(latent_vector).item()
 
     def get_features_single(self, sentence):
         counter = self.count_ner(self.tag_ner(sentence))

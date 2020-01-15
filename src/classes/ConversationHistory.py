@@ -28,10 +28,10 @@ class ConversationHistory:
     def add_parsed_user_msg(self, raw_text, latent_vector, recognized_entities, classified_intent):
         self.user_msgs.append(
             self.ParsedUserMsg(
-                raw_text,
-                latent_vector,
-                recognized_entities,
-                classified_intent
+                raw_text,  # str, directly from user
+                latent_vector,  # numpy array, see interpreter.BaaS.encode()
+                recognized_entities,  # dictionary, see interpreter.get_recognized_entities()
+                classified_intent  # string from cfg.valid_intents or cfg.valid_follow_up_intents
             )
         )
 
@@ -40,6 +40,9 @@ class ConversationHistory:
 
     def get_latest_msg(self):
         return self.user_msgs[-1]
+
+    def update_latest_recognized_entities(self, entity_letter, additional_entity_text):
+        self.user_msgs[-1].recognized_entities[entity_letter].append(additional_entity_text)
 
     def get_list_of_conversation_latest_n_exchanges(self, n):
         history = []
