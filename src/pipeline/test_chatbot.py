@@ -36,9 +36,11 @@ def test_chatbot(interpreter_dict_path=cfg.default_interpreter_dict_output_path,
                        policy=policy)
 
     # Interact
-    chat_bot.interact()
+    try:
+        chat_bot.interact()
 
     # Output detail of conversation if desired
-    if add_conv_detail:
-        logger = utilities.logging.get_logger(cfg.chat_bot_training_log_name)
-        logger.info(chat_bot.conversation_history)
+    finally:
+        if add_conv_detail:
+            logger = utilities.logging.get_logger(cfg.chat_bot_training_log_name)
+            logger.info(chat_bot.conversation_history)

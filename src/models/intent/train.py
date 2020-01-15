@@ -1,5 +1,5 @@
 import pandas as pd
-from sklearn.metrics import classification_report
+from sklearn.metrics import classification_report, f1_score
 from nltk.tag.stanford import StanfordNERTagger
 from src.classes.Interpreter import Interpreter
 from config import Config as cfg
@@ -46,18 +46,13 @@ def train_intent_and_initialize_interpreter(data_path=cfg.ner_and_intent_trainin
 
     # Preprocess features from NER model by counting occurrence of each non-O entity and adding as features
     logger.info('Preprocessing input data.')
-    X = interpreter.preprocess_input_batch(sentences=data.TrainingExample)
+    X = interpreter.preprocess_input_batch(sentences=data.TrainingExample, use_entity_features=True)
 
     # Train with GridSearchCV and return best model
     logger.info('Training model.')
     interpreter.intent_classifier = interpreter.train_SVM(X=X, y=data.Intent, num_cv_folds=num_cv_folds)
 
     # Export
-    logger.info(
-        f'Model training complete. In-sample score is {interpreter.intent_classifier.score(X, data.Intent):.2f} '
-        f'and out-of-sample score is {interpreter.intent_classifier.best_score_:.2f}.'
-    )
-
     in_sample_predictions = interpreter.intent_classifier.predict(X)
     logger.info('In-Sample Classification Report:')
     logger.info('\n' + classification_report(data.Intent, in_sample_predictions))
@@ -65,6 +60,11 @@ def train_intent_and_initialize_interpreter(data_path=cfg.ner_and_intent_trainin
     out_of_fold_predictions = interpreter.eval_trained_model(model=interpreter.intent_classifier, X=X, y=data.Intent, num_cv_folds=num_cv_folds)
     logger.info('Out-of-Sample Classification Report:')
     logger.info('\n' + classification_report(data.Intent, out_of_fold_predictions))
+
+    logger.info(
+        f'Intent Classifier Model training complete. In-sample score is {interpreter.intent_classifier.score(X, data.Intent):.2f} '
+        f'and out-of-sample score is {f1_score(data.Intent, out_of_fold_predictions, average="weighted"):.2f}.'
+    )
 
     interpreter.save_dict(output_path)
     interpreter.kill_BaaS()
@@ -89,7 +89,7 @@ def train_intent_follow_up(data_path=cfg.ner_and_intent_training_data_path,
     # Load in training data
     logger.info('Loading in data and preprocessing.')
     data = load_data(path=data_path, sheet_name='Intent_Follow_Up_Training_Examples')
-    X = interpreter.preprocess_input_batch(sentences=data.TrainingExample)
+    X = interpreter.preprocess_input_batch(sentences=data.TrainingExample, use_entity_features=False)
 
     # Train model using built-in method
     logger.info('Training model.')
@@ -103,6 +103,11 @@ def train_intent_follow_up(data_path=cfg.ner_and_intent_training_data_path,
     out_of_fold_predictions = interpreter.eval_trained_model(model=interpreter.intent_follow_up_classifier, X=X, y=data.Intent, num_cv_folds=num_cv_folds)
     logger.info('Out-of-Sample Classification Report:')
     logger.info('\n' + classification_report(data.Intent, out_of_fold_predictions))
+
+    logger.info(
+        f'Intent Follow-Up Classifier Model training complete. In-sample score is {interpreter.intent_follow_up_classifier.score(X, data.Intent):.2f} '
+        f'and out-of-sample score is {f1_score(data.Intent, out_of_fold_predictions, average="weighted"):.2f}.'
+    )
 
     # Re-serialize model
     interpreter.save_dict(interpreter_dict_path)

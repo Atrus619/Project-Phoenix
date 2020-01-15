@@ -89,6 +89,11 @@ class Config:
         'skills_for_[job]': 'skills_for_[JOB]'
     }
 
+    valid_follow_up_intents = {
+        'Rejection',
+        'Acceptance'
+    }
+
     # Entities
     entities = {
         'J': 'job',
