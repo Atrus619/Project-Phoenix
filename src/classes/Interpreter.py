@@ -1,14 +1,10 @@
 from bert_serving.client import BertClient
-import subprocess
 from collections import Counter
 import nltk
 import pandas as pd
 from sklearn.model_selection import GridSearchCV, cross_val_predict
 from sklearn.svm import SVC
-import os
 import pickle as pkl
-import zmq
-from config import Config as cfg
 from src.classes.utils import init_recognized_entities_dict
 
 
@@ -24,7 +20,7 @@ class Interpreter:
         self.target_entities = target_entities
         self.remove_caps = remove_caps
 
-        self.BaaS = None
+        self.BaaS = BertClient(ignore_all_checks=True)
         self.intent_classifier = None
         self.intent_follow_up_classifier = None
 
@@ -53,22 +49,6 @@ class Interpreter:
             pass
 
         return raw_text, latent_vector, recognized_entities, classified_intent
-
-    def init_BaaS(self):
-        if self.BaaS is not None:
-            self.kill_BaaS()
-
-        try:
-            subprocess.Popen(['bert-serving-start', '-model_dir', cfg.bert_dir, '-num_worker', '1'])
-        except zmq.error.ZMQError:
-            self.kill_BaaS()
-            subprocess.Popen(['bert-serving-start', '-model_dir', cfg.bert_dir, '-num_worker', '1'])
-
-        self.BaaS = BertClient()
-
-    def kill_BaaS(self):
-        os.system('pkill bert')
-        self.BaaS = None
 
     def tag_ner(self, sentence):
         return self.ner_tagger.tag(nltk.word_tokenize(sentence))
@@ -138,8 +118,8 @@ class Interpreter:
         return pd.DataFrame(output_dict)
 
     def preprocess_input_single(self, sentence, use_entity_features=True):
-        if self.BaaS is None:
-            self.init_BaaS()
+        # if self.BaaS is None:
+        #     self.init_BaaS()
 
         dense_vector = pd.DataFrame(self.BaaS.encode([sentence]))
 
@@ -151,8 +131,8 @@ class Interpreter:
         return dense_vector
 
     def preprocess_input_batch(self, sentences, use_entity_features=True):
-        if self.BaaS is None:
-            self.init_BaaS()
+        # if self.BaaS is None:
+        #     self.init_BaaS()
 
         dense_features = pd.DataFrame(self.BaaS.encode(list(sentences)))
 
@@ -184,7 +164,6 @@ class Interpreter:
         return cross_val_predict(model, X, y, cv=num_cv_folds)
 
     def save_dict(self, path):
-        self.kill_BaaS()
         out_dict = {
             'intent_classifier': self.intent_classifier,
             'intent_follow_up_classifier': self.intent_follow_up_classifier,

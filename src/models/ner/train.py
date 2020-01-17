@@ -6,11 +6,15 @@ from config import Config as cfg
 from prefect import task, utilities
 
 
+def get_ner_model_path(model_name):
+    return os.path.join(cfg.serialized_model_dir, model_name + "_ner.ser.gz")
+
+
 @task
 def train_ner(data_path=cfg.ner_and_intent_training_data_path,
               prop_path=cfg.ner_prop_path,
               ner_jar_path=cfg.ner_jar_path,
-              output_path=cfg.ner_model_path,
+              model_name=cfg.default_model_name,
               num_folds=cfg.ner_training_num_cv,
               training_folder=cfg.ner_training_folder,
               full_train_path=cfg.ner_full_train_path):
@@ -19,9 +23,8 @@ def train_ner(data_path=cfg.ner_and_intent_training_data_path,
     :param data_path: Path to training data (excel file output from utterances_to_tokens that has been annotated by user)
     :param prop_path: Path to properties file
     :param ner_jar_path: Path to stanford NER jar file
-    :param output_path: Desired output path for model. Should end in .ser.gz
+    :param model_name: Name of model. Ultimate file will exist in cfg.serialized_model_dir and extension will be _ner.ser.gz
     :param num_folds: Number of folds to use for cross-validation
-    :param oof_metrics_path: Desired output path for output metrics. Pickle file that should end in .pkl
     :param training_folder: Location to place cv folds while training
     :param full_train_path: Location to place model trained on full data as .tsv
     """
@@ -95,6 +98,7 @@ def train_ner(data_path=cfg.ner_and_intent_training_data_path,
                           full_train_path=full_train_path)
 
     logger.info(f'Implementing {num_folds}-fold cross-validation to train NER model.')
+    output_path = get_ner_model_path(model_name=model_name)
     ner_train_test_cv(num_folds=num_folds,
                       ner_jar_path=ner_jar_path,
                       output_path=output_path,
