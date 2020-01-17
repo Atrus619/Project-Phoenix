@@ -9,7 +9,6 @@ import pickle as pkl
 # Interpreter, pretrained elsewhere
 with open(cfg.default_interpreter_output_path, 'rb') as f:
     interpreter = pkl.load(f)
-interpreter.init_BaaS()
 
 # SmallTalk
 dir = stu.download_pretrained_small_talk_model()
@@ -25,9 +24,6 @@ chat_bot = ChatBot(interpreter=interpreter,
 
 # Interact
 chat_bot.interact()
-
-# Turn off
-interpreter.kill_BaaS()
 
 # Debugging
 print(chat_bot.conversation_history)

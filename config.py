@@ -67,11 +67,13 @@ class Config:
     chat_bot_training_log_name = 'chat_bot_training'
     ner_and_intent_training_data_path = 'src/data/intent_and_ner/Intent Training Examples_JL.xlsx'
     bert_dir = 'downloads/cased_L-24_H-1024_A-16/'
+    bert_port = 5555
     ner_jar_path = 'downloads/stanford-ner.jar'
+    serialized_model_dir = 'src/pipeline/serialized_models'
+    default_model_name = 'model'  # NER file will end in _ner.ser.gz, and interpreter dict will end in _interpreter_dict.pkl
 
     # NER Training - see docstring in src/models/ner/train.py
     ner_prop_path = 'src/models/ner/config.prop'
-    ner_model_path = 'src/pipeline/serialized_models/ner-model.ser.gz'
     ner_training_num_cv = 5
     ner_training_folder = 'logs/ner/cv'
     ner_full_train_path = os.path.join(ner_training_folder, 'full_train.tsv')
@@ -79,9 +81,7 @@ class Config:
     # Intent Training - see docstring in src/models/intent/train.py
     intent_training_num_cv = 5
     intent_follow_up_training_num_cv = 3
-    # ner_model_path = 'src/models/ner/ner-model.ser.gz'  # Defined above in NER Training section
-    # ner_jar_path = 'logs/ner/stanford-ner-2018-10-16/stanford-ner.jar'  # Defined above in NER Training section
-    default_interpreter_dict_output_path = 'src/pipeline/serialized_models/interpreter_dict.pkl'
+
     valid_intents = {
         'small_talk': 'Smalltalk',
         'end_of_conversation': 'Conclusions',
