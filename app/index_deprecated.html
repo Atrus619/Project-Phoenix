@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+    <title>Project-Phoenix</title>
+
+    <script src="http://code.jquery.com/jquery-latest.min.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+  </head>
+
+  <body>
+    <div id="box"></div>
+
+    <form id="register">
+      <input type="text" id="name">
+      <input type="submit" value="Submit">
+    </form>
+
+    <form id="chat">
+      <input type="text" id="to">
+      <input type="text" id="message">
+      <input type="submit">
+    </form>
+
+    <script>
+      jQuery(function($){
+        var socket = io.connect();
+        var $chat = $("#chat");
+        var $box = $("#box");
+        var $register = $("#register");
+
+        $register.submit(function(e){
+          e.preventDefault();
+          socket.emit('new', {
+            name: $("#name").val()
+          }, function(data){
+            if(data){
+              console.log('accepted');
+              alert(data);
+            } else{
+              console.log('failed');
+              alert(data);
+            }
+          })
+        })
+
+        $chat.submit(function(e){
+          e.preventDefault();
+          socket.emit('msg', {
+            to: $("#to").val(), msg: $("#message").val()
+          })
+        })
+
+        socket.on('priv', function(data){
+          $("#box").append(data);
+        })
+      })
+    </script>
+  </body>
+</html>

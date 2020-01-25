@@ -14,6 +14,10 @@ from src.pipeline.utils import clean_up, init_BaaS
 from config import Config as cfg
 
 
+# TODO: Add option to show personality
+# TODO: Add option to input personality (function for parsing)
+# TODO: Split train and test into two completely separate scripts
+# TODO: Update issues
 # TODO: Turn entities and intents into special class or enum data type
 def make_flow(model_name=cfg.default_model_name,
               path=cfg.ner_and_intent_training_data_path,
