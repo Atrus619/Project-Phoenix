@@ -16,6 +16,10 @@ class Config:
     db = 'phoenixdb'
     collection = 'post'
 
+    # Chatbot server
+    chatbot_host = os.environ.get('chatbot_host') or 'localhost'
+    chatbot_port = os.environ.get('chatbot_port') or 8765
+
     # Secrets
     ipvanish_password = os.environ.get('ipvanish_password') or 'you-will-never-guess'
     sudo_password = os.environ.get('sudo_password') or 'good-luck'

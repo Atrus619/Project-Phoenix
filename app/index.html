@@ -1,7 +1,7 @@
 <!doctype html>
 <html>
   <head>
-    <title>Socket.IO chat</title>
+    <title>Project-Phoenix</title>
     <style>
       * { margin: 0; padding: 0; box-sizing: border-box; }
       body { font: 13px Helvetica, Arial; }
@@ -19,8 +19,10 @@
         var socket = io();
         $('form').submit(function(e){
           e.preventDefault(); // prevents page reloading
-          socket.emit('chat message', $('#m').val());
-          $('#m').val('');
+          if ($('#m').val() != ''){
+            socket.emit('chat message', $('#m').val());
+            $('#m').val('');
+          }
           return false;
         });
         socket.on('chat message', function(msg){

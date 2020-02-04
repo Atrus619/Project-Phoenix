@@ -1,5 +1,7 @@
 import os
-import sys; sys.path.append('')
+import sys;
+
+sys.path.append('')
 
 from prefect import Flow, utilities
 import logging
@@ -9,11 +11,13 @@ from src.models.ner.allow_user_update_ner import allow_user_update_ner
 from src.models.ner.train import train_ner
 from src.models.intent.train import train_intent_and_initialize_interpreter
 from src.models.intent.train import train_intent_follow_up
-from test_chatbot import test_chatbot
+from run_chatbot import run_chatbot
 from src.pipeline.utils import clean_up, init_BaaS
 from config import Config as cfg
 
 
+# TODO: Make singular
+# TODO: Trim trailing punctuation off of entities
 # TODO: Add option to show personality
 # TODO: Add option to input personality (function for parsing)
 # TODO: Split train and test into two completely separate scripts
@@ -63,10 +67,10 @@ def make_flow(model_name=cfg.default_model_name,
 
         # 6. Spawn Chatbot for testing if requested
         if spawn_chatbot:
-            final_status = test_chatbot(model_name=model_name,
-                                        add_conv_detail=add_conv_detail,
-                                        response_delay=response_delay,
-                                        upstream_tasks=[final_training_task])
+            final_status = run_chatbot(model_name=model_name,
+                                       add_conv_detail=add_conv_detail,
+                                       response_delay=response_delay,
+                                       upstream_tasks=[final_training_task])
         else:
             final_status = final_training_task
 

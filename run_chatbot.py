@@ -14,12 +14,15 @@ import numpy as np
 import time
 from prefect import Flow
 from src.pipeline.utils import clean_up, init_BaaS
+import websockets
+import asyncio
 
 
 @task
-def test_chatbot(model_name,
-                 add_conv_detail=False,
-                 response_delay=2):
+def run_chatbot(model_name,
+                add_conv_detail=False,
+                response_delay=2,
+                is_served=False):
     # Interpreter, pretrained elsewhere
     interpreter = Interpreter()
     interpreter_dict_path = get_interpreter_dict_path(model_name=model_name)
@@ -43,7 +46,12 @@ def test_chatbot(model_name,
 
     # Interact
     try:
-        chat_bot.interact()
+        if is_served:
+            start_server = websockets.serve(chat_bot.served_interact, cfg.chatbot_host, cfg.chatbot_port)
+            asyncio.get_event_loop().run_until_complete(start_server)
+            asyncio.get_event_loop().run_forever()
+        else:
+            chat_bot.console_interact()
 
     # Output detail of conversation if desired
     finally:
@@ -63,15 +71,19 @@ if __name__ == "__main__":
     parser.add_argument("--response_delay", type=int, default=0,
                         help='Number of seconds to add as a stochastic artifical delay for chat bot. Defaults to 0 seconds (no delay).')
 
-    parser.set_defaults(add_conv_detail=False)
+    parser.add_argument("--served", dest='served', action='store_true',
+                        help='Whether to serve the chatbot via websocket. False by default (will run chatbot in console instead).')
+
+    parser.set_defaults(add_conv_detail=False, served=False)
     args = parser.parse_args()
 
-    with Flow(f'{args.model_name} Chatbot Test') as flow:
+    with Flow(f'{args.model_name} chatbot test') as flow:
         BaaS_freshly_initialized = init_BaaS()
-        final_status = test_chatbot(model_name=args.model_name,
-                                    add_conv_detail=args.add_conv_detail,
-                                    response_delay=args.response_delay,
-                                    upstream_tasks=[BaaS_freshly_initialized])
+        final_status = run_chatbot(model_name=args.model_name,
+                                   add_conv_detail=args.add_conv_detail,
+                                   response_delay=args.response_delay,
+                                   upstream_tasks=[BaaS_freshly_initialized],
+                                   is_served=args.served)
         clean_up(pkill_BaaS=BaaS_freshly_initialized,
                  upstream_tasks=[final_status])
         flow.set_reference_tasks([final_status])
