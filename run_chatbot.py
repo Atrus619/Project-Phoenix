@@ -47,9 +47,8 @@ def run_chatbot(model_name,
     # Interact
     try:
         if is_served:
-            start_server = websockets.serve(chat_bot.served_interact, cfg.chatbot_host, cfg.chatbot_port)
-            asyncio.get_event_loop().run_until_complete(start_server)
-            asyncio.get_event_loop().run_forever()
+            uri = f'ws://{cfg.chatbot_host}:{cfg.chatbot_port}'
+            asyncio.get_event_loop().run_until_complete(chat_bot.served_interact(uri=uri))
         else:
             chat_bot.console_interact()
 
@@ -62,7 +61,7 @@ def run_chatbot(model_name,
 
 if __name__ == "__main__":
     parser = ArgumentParser()
-    parser.add_argument('--model_name', type=str, default='model',
+    parser.add_argument('-n', '--model_name', type=str, default='model',
                         help='Title of model. Used for storing model as serialized file.')
 
     parser.add_argument("--add_conv_detail", dest='add_conv_detail', action='store_true',
@@ -71,7 +70,7 @@ if __name__ == "__main__":
     parser.add_argument("--response_delay", type=int, default=0,
                         help='Number of seconds to add as a stochastic artifical delay for chat bot. Defaults to 0 seconds (no delay).')
 
-    parser.add_argument("--served", dest='served', action='store_true',
+    parser.add_argument('-s', "--served", dest='served', action='store_true',
                         help='Whether to serve the chatbot via websocket. False by default (will run chatbot in console instead).')
 
     parser.set_defaults(add_conv_detail=False, served=False)
