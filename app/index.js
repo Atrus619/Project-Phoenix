@@ -2,14 +2,8 @@ var app = require('express')();
 var http = require('http').createServer(app);
 var user_io = require('socket.io')(http);
 
-var chatbot_server = require('net');
-var chatbot_client = new chatbot_server.Socket();
-chatbot_client.connect(8765, '127.0.0.1', function(){
-  console.log('listening for chatbot inputs on *:8765')
-});
-chatbot_client.on('msg', function(msg){
-  console.log('Bot:', msg)
-})
+var eventDebug = require('event-debug')
+eventDebug(http, 'MyServer')
 
 app.get('/', function(req, res){
   res.sendFile(__dirname + '/index.html');
@@ -24,6 +18,13 @@ user_io.on('connection', function(socket){
     console.log('User:', msg)
     user_io.emit('chat message', msg);
   });
+  socket.on('message', function(event){
+    console.log('got something!')
+  });
+  socket.on('error', function(error){
+    console.log('Error:', error)
+  })
+  eventDebug(socket, 'socket')
 });
 
 http.listen(3000, function(){

@@ -1,5 +1,6 @@
 from src.classes.ConversationHistory import ConversationHistory
 from config import Config as cfg
+import websockets
 
 
 class ChatBot:
@@ -33,27 +34,28 @@ class ChatBot:
                                                                          additional_info_conv_history=additional_info_conv_history)
                     print(reply)
 
-    async def served_interact(self, websocket, path):
-        opening_msg = self.update_history_and_generate_opening_msg()
-        await websocket.send(opening_msg)
+    async def served_interact(self, uri):
+        async with websockets.connect(uri) as websocket:
+            opening_msg = self.update_history_and_generate_opening_msg()
+            await websocket.send(opening_msg)
 
-        while True:
-            raw_text = await websocket.recv()
-            parsed_user_msg = self.interpreter.parse_user_msg(raw_text=raw_text)
-            reply = self.update_history_and_generate_reply(parsed_user_msg=parsed_user_msg)
-            await websocket.send(reply)
+            while True:
+                raw_text = await websocket.recv()
+                parsed_user_msg = self.interpreter.parse_user_msg(raw_text=raw_text)
+                reply = self.update_history_and_generate_reply(parsed_user_msg=parsed_user_msg)
+                await websocket.send(reply)
 
-            if self.exit_conversation():
-                break
+                if self.exit_conversation():
+                    break
 
-            # Check if additional information was sought and continue asking until all information determined for request
-            if self.policy.is_seeking_additional_info():
-                additional_info_conv_history = ConversationHistory()
-                while self.policy.is_seeking_additional_info():
-                    raw_text = await websocket.recv()
-                    reply = self.update_history_and_get_more_information(input_msg=raw_text, original_parsed_user_msg=parsed_user_msg,
-                                                                         additional_info_conv_history=additional_info_conv_history)
-                    await websocket.send(reply)
+                # Check if additional information was sought and continue asking until all information determined for request
+                if self.policy.is_seeking_additional_info():
+                    additional_info_conv_history = ConversationHistory()
+                    while self.policy.is_seeking_additional_info():
+                        raw_text = await websocket.recv()
+                        reply = self.update_history_and_get_more_information(input_msg=raw_text, original_parsed_user_msg=parsed_user_msg,
+                                                                             additional_info_conv_history=additional_info_conv_history)
+                        await websocket.send(reply)
 
     @staticmethod
     def seek_input_from_user():
