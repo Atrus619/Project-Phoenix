@@ -19,14 +19,14 @@ policy = Policy(small_talk=small_talk)
 small_talk.print_personality(policy.small_talk_personality)
 
 # ChatBot
-chat_bot = ChatBot(interpreter=interpreter,
+chatbot = ChatBot(interpreter=interpreter,
                    policy=policy)
 
 # Interact
-chat_bot.interact()
+chatbot.interact()
 
 # Debugging
-print(chat_bot.conversation_history)
-x = chat_bot.conversation_history.get_list_of_conversation_latest_n_exchanges(4)
+print(chatbot.conversation_history)
+x = chatbot.conversation_history.get_list_of_conversation_latest_n_exchanges(4)
 for y in x:
     print(y)

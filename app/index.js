@@ -1,9 +1,12 @@
 var app = require('express')();
 var http = require('http').createServer(app);
-var user_io = require('socket.io')(http);
+var user_io = require('socket.io')(http, {
+  // 'pingInterval': Infinity,
+  // 'pingTimeout': Infinity
+});
 
-var eventDebug = require('event-debug')
-eventDebug(http, 'MyServer')
+// var eventDebug = require('event-debug')
+// eventDebug(http, 'MyServer')
 
 app.get('/', function(req, res){
   res.sendFile(__dirname + '/index.html');
@@ -11,26 +14,29 @@ app.get('/', function(req, res){
 
 user_io.on('connection', function(socket){
   console.log('a user connected');
+  user_io.emit('user connect', '');
   socket.on('disconnect', function(){
     console.log('user disconnected');
   });
-  socket.on('chat message', function(msg){
+  socket.on('connect', function(){
+    console.log('CONNECT!')
+    user_io.emit('user connect', '')
+  });
+  socket.on('user message', function(msg){
     console.log('User:', msg)
-    user_io.emit('chat message', msg);
+    user_io.emit('user message', msg);
   });
-  socket.on('message', function(event){
-    console.log('got something!')
+  socket.on('bot message', function(msg){
+    console.log('Chatbot:', msg)
+    user_io.emit('bot message', msg);
   });
-  socket.on('error', function(error){
-    console.log('Error:', error)
-  })
-  eventDebug(socket, 'socket')
+  // eventDebug(socket, 'socket')
 });
 
 http.listen(3000, function(){
   console.log('listening for user inputs on *:3000');
 });
 
-// Trying these links:
-// https://stackoverflow.com/questions/39184455/connect-js-client-with-python-server
-// https://ianhinsdale.com/post/communicating-between-nodejs-and-python/
+// Run normally: nodemon app/index.js
+// Debug: DEBUG=engine* nodemon app/index.js
+// Restart during: type `rs`

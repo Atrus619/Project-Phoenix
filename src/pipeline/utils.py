@@ -22,7 +22,7 @@ def clear_tmps():
     tmp_list = [folder for folder in os.listdir(os.getcwd()) if re.match(tmp_pattern, folder)]
     [shutil.rmtree(tmp_folder) for tmp_folder in tmp_list]
 
-    logger = utilities.logging.get_logger(cfg.chat_bot_training_log_name)
+    logger = utilities.logging.get_logger(cfg.chatbot_training_log_name)
     logger.info('Cleared all tmp folders from primary directory.')
 
     # Clear tmp directory (fills up when running BaaS repeatedly)
@@ -31,7 +31,7 @@ def clear_tmps():
 
 
 def kill_BaaS():
-    logger = utilities.logging.get_logger(cfg.chat_bot_training_log_name)
+    logger = utilities.logging.get_logger(cfg.chatbot_training_log_name)
     logger.info('Shutting down BaaS')
     os.system('pkill bert')
 
@@ -58,3 +58,7 @@ def is_port_in_use(port):
     import socket
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         return s.connect_ex(('localhost', port)) == 0
+
+
+def wrap_websocket_msg(msg):
+    return f'42["bot message", "{msg}"]'

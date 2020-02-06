@@ -37,7 +37,7 @@ def train_intent_and_initialize_interpreter(data_path=cfg.ner_and_intent_trainin
                                             model_name=cfg.default_model_name,  # Output file will end in _interpreter_dict.pkl
                                             remove_caps=True):  # Whether to remove caps upon parsing raw text. Should be the same as how the NER classifier was trained
 
-    logger = utilities.logging.get_logger(cfg.chat_bot_training_log_name)
+    logger = utilities.logging.get_logger(cfg.chatbot_training_log_name)
     logger.info('----- Training Intent Classifier and Initializing Interpreter Class -----')
 
     # Initialize data, BaaS, and ner_tagger
@@ -81,7 +81,7 @@ def train_intent_and_initialize_interpreter(data_path=cfg.ner_and_intent_trainin
 def train_intent_follow_up(data_path=cfg.ner_and_intent_training_data_path,
                            model_name=cfg.default_model_name,
                            num_cv_folds=cfg.intent_follow_up_training_num_cv):
-    logger = utilities.logging.get_logger(cfg.chat_bot_training_log_name)
+    logger = utilities.logging.get_logger(cfg.chatbot_training_log_name)
     logger.info('----- Training Intent Follow Up Model -----')
 
     # Initialize pretrained interpreter

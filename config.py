@@ -68,7 +68,7 @@ class Config:
     max_retry_attempts = 3  # attempts
 
     # Chatbot
-    chat_bot_training_log_name = 'chat_bot_training'
+    chatbot_training_log_name = 'chatbot_training'
     ner_and_intent_training_data_path = 'src/data/intent_and_ner/Intent Training Examples_JL.xlsx'
     bert_dir = 'downloads/cased_L-24_H-1024_A-16/'
     bert_port = 5555

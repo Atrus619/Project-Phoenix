@@ -14,8 +14,7 @@ import numpy as np
 import time
 from prefect import Flow
 from src.pipeline.utils import clean_up, init_BaaS
-import websockets
-import asyncio
+from src.classes.SIO import SIO
 
 
 @task
@@ -41,22 +40,22 @@ def run_chatbot(model_name,
     # small_talk.print_personality(policy.small_talk_personality)
 
     # ChatBot
-    chat_bot = ChatBot(interpreter=interpreter,
-                       policy=policy)
+    chatbot = ChatBot(interpreter=interpreter,
+                      policy=policy)
 
     # Interact
     try:
         if is_served:
-            uri = f'ws://{cfg.chatbot_host}:{cfg.chatbot_port}'
-            asyncio.get_event_loop().run_until_complete(chat_bot.served_interact(uri=uri))
+            address = f'http://{cfg.chatbot_host}:{cfg.chatbot_port}'
+            SIO(chatbot=chatbot, address=address)
         else:
-            chat_bot.console_interact()
+            chatbot.console_interact()
 
     # Output detail of conversation if desired
     finally:
         if add_conv_detail:
-            logger = utilities.logging.get_logger(cfg.chat_bot_training_log_name)
-            logger.info(chat_bot.conversation_history)
+            logger = utilities.logging.get_logger(cfg.chatbot_training_log_name)
+            logger.info(chatbot.conversation_history)
 
 
 if __name__ == "__main__":
