@@ -32,9 +32,9 @@ def make_flow(model_name=cfg.default_model_name,
               response_delay=False):
     with Flow(model_name) as flow:
         # Set up logger
-        logger = utilities.logging.get_logger(cfg.chat_bot_training_log_name)
-        os.makedirs(os.path.join(cfg.log_folder, cfg.chat_bot_training_log_name), exist_ok=True)
-        fileHandler = logging.FileHandler(os.path.join(cfg.log_folder, cfg.chat_bot_training_log_name, model_name + '.log'))
+        logger = utilities.logging.get_logger(cfg.chatbot_training_log_name)
+        os.makedirs(os.path.join(cfg.log_folder, cfg.chatbot_training_log_name), exist_ok=True)
+        fileHandler = logging.FileHandler(os.path.join(cfg.log_folder, cfg.chatbot_training_log_name, model_name + '.log'))
         formatter = logging.Formatter('%(levelname)s: %(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
         fileHandler.setFormatter(formatter)
         logger.addHandler(fileHandler)

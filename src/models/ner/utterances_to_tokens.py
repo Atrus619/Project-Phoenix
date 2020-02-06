@@ -15,7 +15,7 @@ def utterances_to_tokens(path, reuse_existing=True, remove_caps=True):
     :param logger: Optional logger
     :return: Modifies excel sheet in place. Returns True if successful.
     """
-    logger = utilities.logging.get_logger(cfg.chat_bot_training_log_name)
+    logger = utilities.logging.get_logger(cfg.chatbot_training_log_name)
     logger.info(f'----- Processing input excel sheet from {path} to convert utterances to tokens -----')
 
     book = load_workbook(path)

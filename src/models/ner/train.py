@@ -28,7 +28,7 @@ def train_ner(data_path=cfg.ner_and_intent_training_data_path,
     :param training_folder: Location to place cv folds while training
     :param full_train_path: Location to place model trained on full data as .tsv
     """
-    logger = utilities.logging.get_logger(cfg.chat_bot_training_log_name)
+    logger = utilities.logging.get_logger(cfg.chatbot_training_log_name)
 
     def create_training_files(data_path, num_folds, training_folder, full_train_path):
         """
