@@ -16,8 +16,6 @@ from src.pipeline.utils import clean_up, init_BaaS
 from config import Config as cfg
 
 
-# TODO: Add option to input personality (function for parsing)
-# TODO: Update issues
 def make_flow(model_name=cfg.default_model_name,
               path=cfg.ner_and_intent_training_data_path,
               reuse_existing=True,

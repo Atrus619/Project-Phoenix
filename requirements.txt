@@ -1,5 +1,5 @@
 absl-py==0.8.1
-# apex==0.1
+apex==0.1
 arrow==0.14.2
 astor==0.8.0
 beautifulsoup4==4.7.1
@@ -10,6 +10,7 @@ blis==0.4.1
 boto3==1.10.14
 botocore==1.13.14
 cachetools==3.1.1
+catalogue==1.0.0
 certifi==2019.6.16
 chardet==3.0.4
 Click==7.0
@@ -20,7 +21,6 @@ dask==2.9.1
 distributed==2.9.1
 docker==4.1.0
 docutils==0.15.2
-# en-core-web-sm==2.2.0
 et-xmlfile==1.0.1
 fsspec==0.6.2
 ftfy==5.6
@@ -74,7 +74,9 @@ PyMySQL==0.9.3
 python-box==3.4.6
 python-dateutil==2.8.0
 python-dotenv==0.10.3
+python-engineio==3.11.2
 python-slugify==4.0.0
+python-socketio==4.4.0
 pytorch-ignite==0.2.1
 pytorch-transformers==1.2.0
 pytz==2019.2
@@ -119,6 +121,7 @@ urllib3==1.25.3
 wasabi==0.4.0
 wcwidth==0.1.7
 websocket-client==0.57.0
+websockets==8.1
 Werkzeug==0.16.0
 whichcraft==0.6.0
 wrapt==1.11.2
