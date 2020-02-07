@@ -10,6 +10,8 @@ class Policy:
 
     def __init__(self, small_talk, delay_func=lambda: time.sleep(np.clip(np.random.normal(2, 1), 0, 4)), small_talk_personality=None):
         self.small_talk = small_talk
+
+        small_talk_personality = self.preprocess_small_talk_personality(small_talk_personality)  # Returns None if None
         self.small_talk_personality = self.small_talk.get_personality(personality=small_talk_personality)
 
         self.delay_func = delay_func
@@ -109,3 +111,13 @@ class Policy:
 
     def is_seeking_additional_info(self):
         return self.missing_entity is not None
+
+    @staticmethod
+    def preprocess_small_talk_personality(small_talk_personality):
+        if small_talk_personality is None:
+            return None
+        small_talk_personality = small_talk_personality.split('. ')[:5] # Only first five
+        for i, sentence in enumerate(small_talk_personality):
+            if sentence[-1] != '.':
+                small_talk_personality[i] = sentence + '.'
+        return small_talk_personality

@@ -14,7 +14,6 @@ app.get('/', function(req, res){
 
 user_io.on('connection', function(socket){
   console.log('a user connected');
-  user_io.emit('user connect', '');
   socket.on('disconnect', function(){
     console.log('user disconnected');
   });

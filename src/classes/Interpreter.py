@@ -24,9 +24,14 @@ class Interpreter:
         self.intent_classifier = None
         self.intent_follow_up_classifier = None
 
-    def parse_user_msg(self, raw_text):
+    def preprocess_user_raw_text(self, raw_text):
         if self.remove_caps:
             raw_text = raw_text.lower()
+
+        return raw_text
+
+    def parse_user_msg(self, raw_text):
+        raw_text = self.preprocess_user_raw_text(raw_text=raw_text)
 
         latent_vector = self.preprocess_input_single(sentence=raw_text, use_entity_features=True)
         recognized_entities = self.get_recognized_entities(sentence=raw_text)
@@ -118,8 +123,6 @@ class Interpreter:
         return pd.DataFrame(output_dict)
 
     def preprocess_input_single(self, sentence, use_entity_features=True):
-        # if self.BaaS is None:
-        #     self.init_BaaS()
 
         dense_vector = pd.DataFrame(self.BaaS.encode([sentence]))
 
@@ -131,8 +134,6 @@ class Interpreter:
         return dense_vector
 
     def preprocess_input_batch(self, sentences, use_entity_features=True):
-        # if self.BaaS is None:
-        #     self.init_BaaS()
 
         dense_features = pd.DataFrame(self.BaaS.encode(list(sentences)))
 

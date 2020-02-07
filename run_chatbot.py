@@ -21,7 +21,9 @@ from src.classes.SIO import SIO
 def run_chatbot(model_name,
                 add_conv_detail=False,
                 response_delay=2,
-                is_served=False):
+                is_served=False,
+                show_personality=False,
+                personality=None):
     # Interpreter, pretrained elsewhere
     interpreter = Interpreter()
     interpreter_dict_path = get_interpreter_dict_path(model_name=model_name)
@@ -36,12 +38,19 @@ def run_chatbot(model_name,
         return time.sleep(np.clip(np.random.normal(response_delay, response_delay / 2), 0, response_delay * 2))
 
     policy = Policy(small_talk=small_talk,
-                    delay_func=delay_func)
-    # small_talk.print_personality(policy.small_talk_personality)
+                    delay_func=delay_func,
+                    small_talk_personality=personality)
 
     # ChatBot
     chatbot = ChatBot(interpreter=interpreter,
                       policy=policy)
+
+    # Show Personality
+    if show_personality:
+        print('-----')
+        print('Bot\'s personality:')
+        chatbot.policy.small_talk.print_personality(chatbot.policy.small_talk_personality)
+        print('-----')
 
     # Interact
     try:
@@ -72,6 +81,12 @@ if __name__ == "__main__":
     parser.add_argument('-s', "--served", dest='served', action='store_true',
                         help='Whether to serve the chatbot via websocket. False by default (will run chatbot in console instead).')
 
+    parser.add_argument('--show_personality', dest='show_personality', action='store_true',
+                        help='Whether to write out the personality when debugging the bot.')
+
+    parser.add_argument('-p', '--personality', type=str, default='',
+                        help='Optionally enter a personality for the bot to use. Will only use the first 5 sentences passed. Keep the sentences fairly short.')
+
     parser.set_defaults(add_conv_detail=False, served=False)
     args = parser.parse_args()
 
@@ -81,7 +96,9 @@ if __name__ == "__main__":
                                    add_conv_detail=args.add_conv_detail,
                                    response_delay=args.response_delay,
                                    upstream_tasks=[BaaS_freshly_initialized],
-                                   is_served=args.served)
+                                   is_served=args.served,
+                                   show_personality=args.show_personality,
+                                   personality=None if args.personality == '' else args.personality)
         clean_up(pkill_BaaS=BaaS_freshly_initialized,
                  upstream_tasks=[final_status])
         flow.set_reference_tasks([final_status])

@@ -16,13 +16,8 @@ from src.pipeline.utils import clean_up, init_BaaS
 from config import Config as cfg
 
 
-# TODO: Make singular
-# TODO: Trim trailing punctuation off of entities
-# TODO: Add option to show personality
 # TODO: Add option to input personality (function for parsing)
-# TODO: Split train and test into two completely separate scripts
 # TODO: Update issues
-# TODO: Turn entities and intents into special class or enum data type
 def make_flow(model_name=cfg.default_model_name,
               path=cfg.ner_and_intent_training_data_path,
               reuse_existing=True,
@@ -84,12 +79,13 @@ def make_flow(model_name=cfg.default_model_name,
 if __name__ == "__main__":
     # Args
     parser = ArgumentParser()
-    parser.add_argument('--model_name', type=str, default='model',
+    parser.add_argument('-n', '--model_name', type=str, default='model',
                         help='Title of model. Used for storing model as serialized file and naming log files.')
 
-    parser.add_argument("--path", type=str, default=cfg.ner_and_intent_training_data_path,
+    parser.add_argument('-p', "--path", type=str, default=cfg.ner_and_intent_training_data_path,
                         help="Path to the excel file containing training examples for intent classification.")
 
+    # Keeping redundant args to easily swap out defaults if desired
     reuse_existing_help = 'Whether to reuse existing entries in the training file.'
     parser.add_argument("--reuse_existing", dest='reuse_existing', action='store_true', help=reuse_existing_help + ' On by default.')
     parser.add_argument("--overwrite_existing", dest='reuse_existing', action='store_false', help=reuse_existing_help + ' Off by default.')
@@ -105,7 +101,7 @@ if __name__ == "__main__":
                         help="Whether to print out the full conversation at the end with annotations by the chatbot's interpreter. Off by default.")
 
     parser.add_argument("--response_delay", type=int, default=0,
-                        help='Number of seconds to add as a stochastic artifical delay for chat bot. Defaults to 0 seconds (no delay).')
+                        help='Number of seconds to add as a stochastic artificial delay for chat bot. Defaults to 0 seconds (no delay).')
 
     parser.set_defaults(reuse_existing=True, remove_caps=True, spawn_chatbot=False, add_conv_detail=False)
     args = parser.parse_args()
