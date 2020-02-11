@@ -63,6 +63,7 @@ class Config:
     scrape_error_log_name = 'scrape_error_log'
 
     job_description_link_fail_msg = 'Job description unavailable'
+    job_description_parse_fail_msg = 'Failed to parse.'
 
     fail_wait_time = 60  # seconds
     max_retry_attempts = 3  # attempts

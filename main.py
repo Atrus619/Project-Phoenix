@@ -20,7 +20,7 @@ small_talk.print_personality(policy.small_talk_personality)
 
 # ChatBot
 chatbot = ChatBot(interpreter=interpreter,
-                   policy=policy)
+                  policy=policy)
 
 # Interact
 chatbot.interact()
@@ -30,3 +30,16 @@ print(chatbot.conversation_history)
 x = chatbot.conversation_history.get_list_of_conversation_latest_n_exchanges(4)
 for y in x:
     print(y)
+
+from src.classes.Scraper import Scraper
+from src.visualization.visualize import create_wordcloud
+
+scraper = Scraper()
+scraped_jobs = scraper.scrape_page_indeed('Barber', 'Chicago', page=1, vpn=True)
+scraped_jobs.append(scraper.scrape_page_indeed('Barber', 'Chicago', page=2, vpn=True))
+print(scraped_jobs)
+
+create_wordcloud(scraped_jobs)
+create_wordcloud(scraped_jobs, type='job_title')
+
+

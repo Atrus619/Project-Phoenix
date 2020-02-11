@@ -9,7 +9,7 @@ from config import Config as cfg
 from datetime import date
 
 
-def get_soup(session, url, user_agent, logger):
+def get_soup(session, url, user_agent):
     """
     Helper function to construct a BeautifulSoup representation of a url.
     :param session: requests session object
@@ -20,12 +20,12 @@ def get_soup(session, url, user_agent, logger):
     headers = cs.base_request_headers
     headers['User-Agent'] = user_agent
 
-    page = custom_get(session=session, url=url, headers=headers, logger=logger)
+    page = custom_get(session=session, url=url, headers=headers)
 
     return BeautifulSoup(page.text, 'html.parser')
 
 
-def custom_get(session, url, headers, logger):
+def custom_get(session, url, headers):
     with session.get(url, headers=headers) as page:
         return page
 
@@ -88,3 +88,10 @@ def get_pretty_time(duration, num_digits=2):
     else:
         return str(round(duration, num_digits)) + 's'
 
+
+def ipvanish_connect(address):
+    return os.system('echo %s|sudo -S %s' % (cfg.sudo_password, './src/scraping/change_ip.sh ' + address))
+
+
+def is_ipvanish_up():
+    return os.system('nmcli c show --active | grep vpn') == 0

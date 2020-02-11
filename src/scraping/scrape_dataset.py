@@ -101,7 +101,7 @@ def scrape_dataset(search_params, num_pages, source):
                 k = 1
                 while 1:
                     try:
-                        soup = su.get_soup(session=session, url=url, user_agent=user_agents[0], logger=logger)  # Retrieve page from website
+                        soup = su.get_soup(session=session, url=url, user_agent=user_agents[0])  # Retrieve page from website
                         break
                     except requests.exceptions.ConnectionError as e:
                         if k > cfg.max_retry_attempts:

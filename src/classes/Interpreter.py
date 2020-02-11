@@ -63,9 +63,12 @@ class Interpreter:
         return Counter(tag[1] for tag in tagged_sentence)
 
     def get_recognized_entities(self, sentence):
-        # Output recognized entities is a dictionary.
-        # Key is entity letter ('J' for job, 'L' for location)
-        # Value is a list of recognized entities as strings, one string for each full recognized entity
+        """
+        Output recognized entities is a dictionary.
+        Key is entity letter ('J' for job, 'L' for location)
+        Value is a list of recognized entities as strings, one string for each full recognized entity
+        """
+
         tagged_sentence = self.tag_ner(sentence)
         entity_features = self.get_features_single(sentence)
 

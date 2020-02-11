@@ -122,7 +122,7 @@ def extract_description_from_link(link, user_agent, og_page_url):
     return re.sub(pattern, '', str(raw_descr))
 
 
-def extract_description_html_from_link(session, link, user_agent, og_page_url, logger):
+def extract_description_html_from_link(session, link, user_agent, og_page_url):
     """
     Retrieves full html from a monster job posting link. Extracting the job description specifically varies too much from company website to website.
     :param session: requests.session object
@@ -135,5 +135,5 @@ def extract_description_html_from_link(session, link, user_agent, og_page_url, l
     headers['User-Agent'] = user_agent
     headers['Referer'] = og_page_url
     url = link  # lol.
-    page = su.custom_get(session=session, url=url, headers=headers, logger=logger)
+    page = su.custom_get(session=session, url=url, headers=headers)
     return page.text
