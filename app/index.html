@@ -2,43 +2,37 @@
 <html>
   <head>
     <title>Project-Phoenix</title>
-    <style>
-      * { margin: 0; padding: 0; box-sizing: border-box; }
-      body { font: 13px Helvetica, Arial; }
-      form { background: #000; padding: 3px; position: fixed; bottom: 0; width: 100%; }
-      form input { border: 0; padding: 10px; width: 90%; margin-right: .5%; }
-      form button { width: 9%; background: rgb(130, 224, 255); border: none; padding: 10px; }
-      #messages { list-style-type: none; margin: 0; padding: 0; }
-      #messages li { padding: 5px 10px; }
-      #messages li:nth-child(odd) { background: #eee; }
-    </style>
+
+    <link rel="stylesheet" type='text/css' href="css/style.css"/>
+
     <script src="/socket.io/socket.io.js"></script>
     <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
-    <script>
-      $(function () {
-        var socket = io();
-        $('form').submit(function(e){
-          e.preventDefault(); // prevents page reloading
-          if ($('#m').val() != ''){
-            socket.emit('user message', $('#m').val());
-            $('#m').val('');
-          }
-          return false;
-        });
-        socket.on('user message', function(msg){
-          $('#messages').append($('<li>').text(msg));
-        });
-        socket.on('bot message', function(msg){
-          $('#messages').append($('<li>').text(msg));
-        });
-      });
-    </script>
+    <script src="js/index.js"></script>
   </head>
 
   <body>
-    <ul id="messages"></ul>
-    <form action="">
-      <input id="m" autocomplete="off" /><button>Send</button>
-    </form>
+    <div class="leftcolumn">
+      <ul id="messages"></ul>
+
+      <form id="chat_form" action="">
+        <input type='text' id="m" autocomplete="off"/>
+        <div class='flex'>
+          <input type='button' id='record_audio' value='Record Audio' onclick='startRecording();'/>
+          <input type='button' id='send_message' value='Send' onclick='sendMessage();'/>
+        </div>
+      </form>
+    </div>
+
+    <div class="rightcolumn">
+      <div class="viz_area">
+        <h2>Placeholder for future images</h2>
+        <div class="fakeimg" style="height:100px;">Image</div>
+        <p>Placeholder for future images</p>
+      </div>
   </body>
 </html>
+
+<!-- Add instructions to top of page?? -->
+<!-- Add ability to click plots to expand and download -->
+<!-- Add button to download all plots at bottom of screen -->
+<!-- Add a header -->

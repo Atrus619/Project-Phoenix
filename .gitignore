@@ -12,4 +12,4 @@ tmp*
 *~lock*
 downloads/*
 apex/
-#app/static/*
+app/static/*
