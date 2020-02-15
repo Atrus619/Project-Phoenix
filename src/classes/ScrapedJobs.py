@@ -15,8 +15,8 @@ class ScrapedJobs:
     def __str__(self):
         return str(self._table)
 
-    def __index__(self, i):
-        return self._job_postings[i]
+    def __getitem__(self, item):
+        return self._job_postings[item]
 
     def __iter__(self):
         yield from self._job_postings

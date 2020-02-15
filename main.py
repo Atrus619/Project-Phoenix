@@ -43,3 +43,12 @@ create_wordcloud(scraped_jobs)
 create_wordcloud(scraped_jobs, type='job_title')
 
 
+import src.visualization.visualize as viz
+
+viz.extract_salary(scraped_jobs[0])
+
+for job_posting in scraped_jobs:
+    extracted_salary = viz.extract_salary(job_posting)
+    if extracted_salary is not None:
+        print(f'Salary Extracted: {extracted_salary} / year')
+        print(f'Corresponding Job Posting: \n{job_posting.parse()}')
