@@ -33,22 +33,19 @@ for y in x:
 
 from src.classes.Scraper import Scraper
 from src.visualization.visualize import create_wordcloud
+from src.classes.JobPostingExtractor import JobPostingExtractor
 
 scraper = Scraper()
-scraped_jobs = scraper.scrape_page_indeed('Barber', 'Chicago', page=1, vpn=True)
-scraped_jobs.append(scraper.scrape_page_indeed('Barber', 'Chicago', page=2, vpn=True))
-print(scraped_jobs)
+scraped_jobs = scraper.scrape_page_indeed('Actuary', 'Chicago', page=1, vpn=True)
+# scraped_jobs.append(scraper.scrape_page_indeed('Actuary', 'Chicago', page=2, vpn=True))
+# print(scraped_jobs)
+#
+# create_wordcloud(scraped_jobs)
+# create_wordcloud(scraped_jobs, type='job_title')
 
-create_wordcloud(scraped_jobs)
-create_wordcloud(scraped_jobs, type='job_title')
-
-
-import src.visualization.visualize as viz
-
-viz.extract_salary(scraped_jobs[0])
-
-for job_posting in scraped_jobs:
-    extracted_salary = viz.extract_salary(job_posting)
-    if extracted_salary is not None:
-        print(f'Salary Extracted: {extracted_salary} / year')
-        print(f'Corresponding Job Posting: \n{job_posting.parse()}')
+jpe = JobPostingExtractor(scraped_jobs[8])
+jpe.set_encodings(8)
+print(jpe.extract_salary())
+print(jpe.extract_required_years_experience(reference_sentence='5+ years of experience', threshold=0.9))
+print(jpe)
+print(jpe.extract_required_degree())
