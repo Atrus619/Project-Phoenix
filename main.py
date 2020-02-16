@@ -54,4 +54,4 @@ print(jpe.extract_travel_percentage())
 # TODO: Heatmap based on locations found??
 # TODO: Batch together entire page of job postings as an alternative for set_encodings? Could improve speed
 # TODO: Add extract benefits (will be more challenging to implement)
-# TODO: Master process to retrieve and coordinate job posting extractions
+# TODO: Master process to retrieve and coordinate job posting extractions, kick off job for redis server?

@@ -1,6 +1,7 @@
 import time
 from config import Config as cfg
 import numpy as np
+from src.classes.Visualizer import Visualizer
 
 
 class Policy:
@@ -16,6 +17,9 @@ class Policy:
 
         self.delay_func = delay_func
         self.missing_entity = None
+
+        # TODO: Construct visualizer
+        self.visualizer = Visualizer()
 
     def get_reply(self, conversation_history):
         latest_msg = conversation_history.get_latest_msg()
@@ -59,8 +63,11 @@ class Policy:
 
     def get_reply_job_in_location(self, recognized_entities):
         assert recognized_entities is not None
-        if (len(recognized_entities["J"]) > 0) and (len(recognized_entities["L"]) > 0):  # Only return information about the first one asked for now. TODO: Handle multiple requests simultaneously?
-            reply = f'You are asking for information about a {recognized_entities["J"][0]} in {recognized_entities["L"][0]}.'
+        if (len(recognized_entities["J"]) > 0) and (len(recognized_entities["L"]) > 0):  # Only return information about the first one asked for now.
+            job, location = recognized_entities["J"][0], recognized_entities["L"][0]
+            reply = f'You are asking for information about a {job} in {location}. ' \
+                    f'Please wait a moment while I collect the relevant information for you.'
+            self.visualizer.process_job_in_location(job=job, location=location)
             return reply
 
         intent_descr = 'a specific job in a specific location'

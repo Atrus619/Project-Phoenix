@@ -21,7 +21,6 @@ class JobPostingExtractor:
             return
         self._ngram_size = ngram_size
         self._ngrams_list = self._preprocess_job_posting()
-        self._parse_failed = self._ngrams_list is None
         self._ngrams_encoded = self._encode_job_posting_ngrams()
 
     def extract_required_years_experience(self, reference_sentence='5+ years of experience', threshold=0.9):
@@ -139,6 +138,7 @@ class JobPostingExtractor:
     def _encode_job_posting_ngrams(self):
         """Returns a list of ngrams from job posting as well as the BaaS encoded representations. Returns None if parse fails."""
         if self._parse_failed:
+            warn('Parse failed. Returning None.')
             return None
 
         with self._get_BaaS() as BaaS:
@@ -187,3 +187,6 @@ class JobPostingExtractor:
 
     def __str__(self):
         return self._parsed_job_posting
+
+    def successfully_parsed(self):
+        return not self._parse_failed
