@@ -36,16 +36,22 @@ from src.visualization.visualize import create_wordcloud
 from src.classes.JobPostingExtractor import JobPostingExtractor
 
 scraper = Scraper()
-scraped_jobs = scraper.scrape_page_indeed('Actuary', 'Chicago', page=1, vpn=True)
-# scraped_jobs.append(scraper.scrape_page_indeed('Actuary', 'Chicago', page=2, vpn=True))
-# print(scraped_jobs)
+scraped_jobs = scraper.scrape_page_indeed('Consultant', 'Chicago', page=1, vpn=True)
+scraped_jobs.append(scraper.scrape_page_indeed('Consultant', 'Chicago', page=2, vpn=True))
+print(scraped_jobs)
 #
 # create_wordcloud(scraped_jobs)
 # create_wordcloud(scraped_jobs, type='job_title')
 
-jpe = JobPostingExtractor(scraped_jobs[8])
+jpe = JobPostingExtractor(scraped_jobs[1])
 jpe.set_encodings(8)
 print(jpe.extract_salary())
-print(jpe.extract_required_years_experience(reference_sentence='5+ years of experience', threshold=0.9))
+print(jpe.extract_required_years_experience())
 print(jpe)
 print(jpe.extract_required_degree())
+print(jpe.extract_travel_percentage())
+
+# TODO: Heatmap based on locations found??
+# TODO: Batch together entire page of job postings as an alternative for set_encodings? Could improve speed
+# TODO: Add extract benefits (will be more challenging to implement)
+# TODO: Master process to retrieve and coordinate job posting extractions

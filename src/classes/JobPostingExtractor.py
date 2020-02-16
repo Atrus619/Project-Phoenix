@@ -25,6 +25,7 @@ class JobPostingExtractor:
         self._ngrams_encoded = self._encode_job_posting_ngrams()
 
     def extract_required_years_experience(self, reference_sentence='5+ years of experience', threshold=0.9):
+        """Returns average of years of experience"""
         similarities = self._get_similarities(reference_sentence=reference_sentence, threshold=threshold)
 
         if similarities is None:
@@ -42,6 +43,7 @@ class JobPostingExtractor:
         return selected_years_exp
 
     def extract_required_degree(self, reference_sentence='education: bachelors degree, masters degree, phd or higher', threshold=0.9):
+        """Returns list of degrees mentioned"""
         similarities = self._get_similarities(reference_sentence=reference_sentence, threshold=threshold)
 
         if similarities is None:
@@ -49,6 +51,10 @@ class JobPostingExtractor:
 
         degree_pattern = r'(\bbs\b|\bms\b|\bphd\b|bachelor|master|doctorate|advanced)'
         degrees = self._scan_valid_ngrams(similarities=similarities, pattern=degree_pattern)
+
+        if degrees is None:
+            warn('Could not find a degree in parsed job posting. Returning None.')
+            return None
 
         selected_degrees = []
         for degree in degrees:
@@ -62,13 +68,27 @@ class JobPostingExtractor:
                 selected_degrees.append('Advanced Degree')
         return selected_degrees
 
-    def extract_travel_percentage(self, reference_sentence='', threshold=0.9):
+    def extract_travel_percentage(self, reference_sentence='Travel: 25-50%', threshold=0.9):
+        """Returns an average integer percentage"""
         similarities = self._get_similarities(reference_sentence=reference_sentence, threshold=threshold)
 
         if similarities is None:
             return None
 
-    def extract_salary(self, reference_sentence='Salary: $50,000 / year', threshold=0.9):
+        travel_percentage_pattern = r'\d+'
+        travel_percentages = self._scan_valid_ngrams(similarities=similarities, pattern=travel_percentage_pattern)
+
+        if travel_percentages is None:
+            warn('Could not find valid travel percentages. Returning None.')
+            return None
+
+        parsed_travel_percentages = [float(travel_percentage) for travel_percentage in travel_percentages]
+        selected_travel_percentage = np.mean(parsed_travel_percentages)
+
+        return selected_travel_percentage
+
+    def extract_salary(self, reference_sentence='Salary: $50,000 - $60,000 / year with bonus', threshold=0.9):
+        """Returns a tuple containing average annualized salary and whether bonus is mentioned"""
         similarities = self._get_similarities(reference_sentence=reference_sentence, threshold=threshold)
 
         if similarities is None:
@@ -89,7 +109,6 @@ class JobPostingExtractor:
 
         if period is None:
             warn('No valid periods found for salary calculation. Assuming default of annual period.')
-            return selected_rate
         elif 'hour' in period:
             selected_rate *= 40 * 52
         elif 'da' in period:
@@ -99,7 +118,11 @@ class JobPostingExtractor:
         elif 'month' in period:
             selected_rate *= 12
 
-        return selected_rate
+        bonus_pattern = r'(bonus)'
+        bonus = self._scan_valid_ngrams(similarities=similarities, pattern=bonus_pattern)
+        bonus_mentioned = bonus is not None
+
+        return selected_rate, bonus_mentioned
 
     def extract_benefits(self, reference_sentence='', threshold=0.9):
         similarities = self._get_similarities(reference_sentence=reference_sentence, threshold=threshold)
@@ -118,9 +141,9 @@ class JobPostingExtractor:
         if self._parse_failed:
             return None
 
-        BaaS = self._get_BaaS()
+        with self._get_BaaS() as BaaS:
+            ngrams_encoded = BaaS.encode(self._ngrams_list)
 
-        ngrams_encoded = BaaS.encode(self._ngrams_list)
         return ngrams_encoded
 
     def _get_similarities(self, reference_sentence, threshold):
@@ -133,9 +156,8 @@ class JobPostingExtractor:
             warn('Job posting failed to parse. Returning None.')
             return None
 
-        BaaS = self._get_BaaS()
-
-        reference_sentence_encoded = BaaS.encode([reference_sentence])
+        with self._get_BaaS() as BaaS:
+            reference_sentence_encoded = BaaS.encode([reference_sentence])
 
         similarities = cosine_similarity(self._ngrams_encoded, reference_sentence_encoded)
 
@@ -144,7 +166,7 @@ class JobPostingExtractor:
         similarities = similarities[similarities[:, 1] > threshold]
 
         if len(similarities) == 0:
-            warn(f'No similarities found above threshold of {threshold}.')
+            warn(f'No similarities found above threshold of {threshold}. Returning None.')
             return None
 
         return similarities
