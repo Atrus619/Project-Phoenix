@@ -1,5 +1,5 @@
 import src.visualization.visualize as viz
-from src.classes.GatheredJPEs import GatheredJPEs
+from src.classes.Extractions import Extractions
 
 
 class Visualizer:
@@ -7,5 +7,5 @@ class Visualizer:
         pass
 
     def process_job_in_location(self, job, location):
-        gathered_jpes = GatheredJPEs(required_years_experience=5, required_degree=5, travel_percentage=5, salary=5)
-        jpes = viz.gather_jpes(job=job, location=location, gathered_jpes=gathered_jpes)
+        extractions = Extractions(required_years_experience=5, required_degree=5, travel_percentage=5, salary=5)
+        extractions.gather(job=job, location=location)
