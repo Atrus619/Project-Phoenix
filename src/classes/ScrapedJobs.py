@@ -32,8 +32,8 @@ class ScrapedJobs:
     def append(self, scraped_jobs):
         """Joins scraped_jobs objects together"""
         assert type(scraped_jobs) is ScrapedJobs
-        self._job_postings += scraped_jobs.job_postings()
+        self._job_postings += scraped_jobs.get_job_postings()
         self._build_table()
 
-    def job_postings(self):
+    def get_job_postings(self):
         return self._job_postings

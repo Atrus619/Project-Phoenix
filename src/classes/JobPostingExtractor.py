@@ -28,6 +28,7 @@ class JobPostingExtractor:
         similarities = self._get_similarities(reference_sentence=reference_sentence, threshold=threshold)
 
         if similarities is None:
+            warn(f'No similarities found for years experience above threshold of {threshold}. Returning None.')
             return None
 
         years_exp_pattern = r'\d+'
@@ -41,11 +42,12 @@ class JobPostingExtractor:
 
         return selected_years_exp
 
-    def extract_required_degree(self, reference_sentence='education: bachelors degree, masters degree, phd or higher', threshold=0.9):
+    def extract_required_degree(self, reference_sentence='education: bachelors degree, masters degree, phd or higher', threshold=0.89):
         """Returns list of degrees mentioned"""
         similarities = self._get_similarities(reference_sentence=reference_sentence, threshold=threshold)
 
         if similarities is None:
+            warn(f'No similarities found for required degree above threshold of {threshold}. Returning None.')
             return None
 
         degree_pattern = r'(\bbs\b|\bms\b|\bphd\b|bachelor|master|doctorate|advanced)'
@@ -72,6 +74,7 @@ class JobPostingExtractor:
         similarities = self._get_similarities(reference_sentence=reference_sentence, threshold=threshold)
 
         if similarities is None:
+            warn(f'No similarities found for travel percentage above threshold of {threshold}. Returning None.')
             return None
 
         travel_percentage_pattern = r'\d+'
@@ -79,6 +82,11 @@ class JobPostingExtractor:
 
         if travel_percentages is None:
             warn('Could not find valid travel percentages. Returning None.')
+            return None
+
+        travel_percentages = [x for x in travel_percentages if float(x) <= 100]
+        if len(travel_percentages) == 0:
+            warn('Could not find travel percentages below 100%.')
             return None
 
         parsed_travel_percentages = [float(travel_percentage) for travel_percentage in travel_percentages]
@@ -91,6 +99,7 @@ class JobPostingExtractor:
         similarities = self._get_similarities(reference_sentence=reference_sentence, threshold=threshold)
 
         if similarities is None:
+            warn(f'No similarities found for salary above threshold of {threshold}. Returning None.')
             return None
 
         rate_pattern = r'(?:[\£\$\€]{1}[,\d]+.?\d*)'
@@ -166,19 +175,19 @@ class JobPostingExtractor:
         similarities = similarities[similarities[:, 1] > threshold]
 
         if len(similarities) == 0:
-            warn(f'No similarities found above threshold of {threshold}. Returning None.')
             return None
 
         return similarities
 
     @staticmethod
-    def _scan_valid_ngrams(similarities, pattern):
+    def _scan_valid_ngrams(similarities, pattern, return_first_only=True):
         """Scans through similarities array (sorted) to find the first match on the provided pattern. If no match is found, returns None"""
+        matched = None
         for i in range(len(similarities)):
             matched = re.findall(pattern, similarities[i, 0])
-            if len(matched) > 0:
+            if return_first_only and len(matched) > 0:
                 return matched
-        return None
+        return matched
 
     @staticmethod
     def _get_BaaS():

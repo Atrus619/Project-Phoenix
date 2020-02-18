@@ -1,11 +1,18 @@
 import src.visualization.visualize as viz
 from src.classes.Extractions import Extractions
+from redis import Redis
+import rq
+from config import Config as cfg
+import pickle as pkl
 
 
 class Visualizer:
     def __init__(self):
-        pass
+        self.redis = Redis.from_url(cfg.REDIS_URL)
+        self.task_queue = rq.Queue('extractor', connection=self.redis)
 
     def process_job_in_location(self, job, location):
-        extractions = Extractions(required_years_experience=5, required_degree=5, travel_percentage=5, salary=5)
-        extractions.gather(job=job, location=location)
+        task = self.task_queue.enqueue('src.visualization.visualize.run_extractions',
+                                       args=(job, location),
+                                       job_timeout=-1)
+        return task

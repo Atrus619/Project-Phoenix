@@ -116,3 +116,6 @@ class Config:
         'no_sample': False,
         'random_pause': None
     }
+
+    # Redis
+    REDIS_URL = os.environ.get('REDIS_URL') or 'redis://'
