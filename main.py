@@ -39,7 +39,7 @@ scraper = Scraper()
 scraped_jobs = scraper.scrape_page_indeed('Actuary', 'Chicago', page=1, vpn=True)
 scraped_jobs.append(scraper.scrape_page_indeed('Consultant', 'Chicago', page=2, vpn=True))
 print(scraped_jobs)
-#
+
 # create_wordcloud(scraped_jobs)
 # create_wordcloud(scraped_jobs, type='job_title')
 
@@ -51,11 +51,15 @@ print(jpe.extract_required_degree())
 print(jpe.extract_travel_percentage())
 print(jpe)
 
-# TODO: Heatmap based on locations found??
-# TODO: Batch together entire page of job postings as an alternative for set_encodings? Could improve speed
 # TODO: Add extract benefits (will be more challenging to implement)
 # TODO: Master process to retrieve and coordinate job posting extractions, kick off job for redis server?
-# TODO: Try tokenizing first and saying is_tokenized=True???
+# TODO: Seems to get stuck if not already in vpn mode
+
+# TODO: Convert warn to logdebug, and possibly add a few more debugging statements to help figure out where it is failing
+# TODO: Accept that salary may be incredibly hard to find
+# TODO: Point out bias of travel when posting information on it
+# TODO: Retain postings with salary information, and sort in order from highest to lowest (can show to user as a feature)
+# TODO: Heatmap based on locations found??
 
 import src.visualization.visualize as vizz
 from src.classes.Visualizer import Visualizer
@@ -68,12 +72,17 @@ vizz.setup_extractions_logger(job='Actuary', location='Chicago')
 extractions = Extractions(required_years_experience=5, required_degree=5, travel_percentage=5, salary=5)
 extractions.gather(job, location)
 
-jpe = JobPostingExtractor(extractions.scraped_jobs[3])
+jpe = JobPostingExtractor(extractions.scraped_jobs[-5])
 jpe.set_encodings(8)
 print(jpe.extract_salary())
 print(jpe.extract_required_years_experience())
 print(jpe.extract_required_degree())
 print(jpe.extract_travel_percentage())
 print(jpe)
+
+import re
+salary_pattern = r'(salary|compensation)'
+match = re.findall(salary_pattern, str(jpe))
+print(len(match))
 
 similarities = jpe._get_similarities(reference_sentence='education: bachelors degree, masters degree, phd or higher', threshold=0.89)

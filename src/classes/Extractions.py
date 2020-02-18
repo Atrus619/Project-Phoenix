@@ -1,3 +1,4 @@
+import re
 import requests
 from src.classes.Scraper import Scraper
 from src.classes.JobPostingExtractor import JobPostingExtractor
@@ -21,7 +22,7 @@ class Extractions:
         self._current_page = 1
 
     def is_complete(self):
-        return self.required_years_experience == self.required_degree == self.travel_percentage == self.salary == 0
+        return max(self.required_years_experience, self.required_degree, self.travel_percentage, self.salary) <= 0
 
     def _update(self, jpes):
         for jpe in jpes:
@@ -95,19 +96,78 @@ class Extractions:
 
             # Update reqs based on successes
             self._update(current_jpes)
-            logger.info(f'Requirements updated. {self}')
+            logger.info(f'Requirements updated.\n{self}')
 
             # Prepare for next loop iteration
-            if self.scraped_jobs is None:
-                self.scraped_jobs = scraped_jobs
-            else:
-                self.scraped_jobs.append(scraped_jobs)
+            self._append_scraped_jobs(scraped_jobs)
             self._current_page += 1
 
+            if self.all_except_salary_complete():
+                self.gather_salary_only(job=job, location=location, ngram_size=ngram_size, vpn=vpn, max_iters=20)
+
         logger.info(f'Gather completed in {self._current_page - 1} pages. Requirements {"" if self.is_complete() else "not"} successfully met.')
+
+    def gather_salary_only(self, job, location, ngram_size=8, vpn=True, max_iters=20):
+        logger = logging.getLogger('extractions')
+        logger.info(f'----------All other requirements met, now searching for salary specifically (need {self.salary} more).----------')
+
+        while (self.salary > 0) and (self._current_page <= max_iters):
+            # Scrape an entire page off of indeed
+            logger.info(f'-----Scraping page {self._current_page} of indeed for {job} in {location} {"" if vpn else "not"} using vpn for salaries only.-----')
+            try:
+                scraped_jobs = Scraper().scrape_page_indeed(job_title=job, location=location, page=self._current_page, vpn=vpn)
+            except requests.exceptions.ConnectionError as e:
+                logger.warn(f'{e}')
+                logger.info(f'Due to connection error, skipping current page ({self._current_page}) and moving to the next one.')
+                continue
+
+            # Batch collect encodings for jpes where parsing did not fail
+            logger.info('Creating job posting extractors for scraped jobs for salaries only.')
+            current_jpes = [JobPostingExtractor(job_posting) for job_posting in scraped_jobs]
+            current_jpes = [jpe for jpe in current_jpes if jpe.successfully_parsed()]
+            logger.info(f'{len(current_jpes)} / {len(scraped_jobs)} job postings successfully parsed.')
+            if len(current_jpes) == 0:
+                logger.info(f'Since zero job postings from this page ({self._current_page}) were successfully parsed, skipping to next page.')
+                continue
+
+            logger.info(f'Skimming for salary information in {len(current_jpes)} postings.')
+            current_found_salary_jpes = []
+            for jpe in current_jpes:
+                if self._salary_present(jpe):
+                    current_found_salary_jpes.append(jpe)
+
+            if len(current_found_salary_jpes) == 0:
+                logger.info(f'No salary information found on current page {self._current_page}. Skipping to next page.')
+                continue
+
+            logger.info(f'Salary information potentially found in {len(current_found_salary_jpes)} postings. Parsing for salary amount and adding now.')
+            for jpe in current_found_salary_jpes:
+                jpe.set_encodings(ngram_size=ngram_size)
+
+            self._update(current_found_salary_jpes)
+
+            self._append_scraped_jobs(scraped_jobs)
+
+            logger.info(f'Requirements updated (searching for salary primarily).\n{self}')
+            self._current_page += 1
+
+    @staticmethod
+    def _salary_present(jpe):
+        salary_pattern = r'(salary|compensation)'
+        match = re.findall(salary_pattern, str(jpe))
+        return len(match) > 0
+
+    def all_except_salary_complete(self):
+        return max(self.required_years_experience, self.required_degree, self.travel_percentage) <= 0
 
     def __str__(self):
         table = PrettyTable()
         table.field_names = ['Years Experience', 'Required Degree', 'Travel Percentage', 'Salary']
         table.add_row([self.required_years_experience, self.required_degree, self.travel_percentage, self.salary])
         return f'Remaining requirements\n{table}'
+
+    def _append_scraped_jobs(self, scraped_jobs):
+        if self.scraped_jobs is None:
+            self.scraped_jobs = scraped_jobs
+        else:
+            self.scraped_jobs.append(scraped_jobs)
