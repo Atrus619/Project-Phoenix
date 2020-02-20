@@ -1,12 +1,17 @@
 import re
 import requests
 from src.classes.Scraper import Scraper
+from src.classes.ScrapedJobs import ScrapedJobs
 from src.classes.JobPostingExtractor import JobPostingExtractor
 from bert_serving.client import BertClient
 import src.pipeline.utils as spu
 from config import Config as cfg
 import logging
 from prettytable import PrettyTable
+from src.pipeline.utils import setup_extractions_logger
+
+setup_extractions_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 class Extractions:
@@ -16,8 +21,9 @@ class Extractions:
         self.travel_percentage = travel_percentage
         self.salary = salary
 
-        self.scraped_jobs = None
+        self.scraped_jobs, self.scraped_jobs_parsed = None, None
         self.extracted_required_years_experience, self.extracted_required_degrees, self.extracted_travel_percentages, self.extracted_salaries = [], [], [], []
+        self.extracted_rye_indices, self.extracted_rd_indices, self.extracted_tp_indices, self.extracted_sal_indices = [],  [], [], []
 
         self._current_page = 1
 
@@ -25,28 +31,42 @@ class Extractions:
         return max(self.required_years_experience, self.required_degree, self.travel_percentage, self.salary) <= 0
 
     def _update(self, jpes):
-        for jpe in jpes:
+        current_len = len(self.scraped_jobs_parsed)
+        for i, jpe in enumerate(jpes):
             extracted_years_experience = jpe.extract_required_years_experience()
             if extracted_years_experience is not None:
                 self.required_years_experience -= 1
                 self.extracted_required_years_experience.append(extracted_years_experience)
+                self.extracted_rye_indices.append(current_len + i)
 
             extracted_required_degree = jpe.extract_required_degree()
             if extracted_required_degree is not None:
                 self.required_degree -= 1
                 self.extracted_required_degrees.append(extracted_required_degree)
+                self.extracted_rd_indices.append(current_len + i)
 
             extracted_travel_percentage = jpe.extract_travel_percentage()
             if extracted_travel_percentage is not None:
                 self.travel_percentage -= 1
                 self.extracted_travel_percentages.append(extracted_travel_percentage)
+                self.extracted_tp_indices.append(current_len + i)
 
             extracted_salary = jpe.extract_salary()
             if extracted_salary is not None:
                 self.salary -= 1
                 self.extracted_salaries.append(extracted_salary)
+                self.extracted_sal_indices.append(current_len + i)
 
-    def gather(self, job, location, ngram_size=8, vpn=True, max_iters=10):
+    def _update_salary(self, jpes):
+        current_len = len(self.scraped_jobs_parsed)
+        for i, jpe in enumerate(jpes):
+            extracted_salary = jpe.extract_salary()
+            if extracted_salary is not None:
+                self.salary -= 1
+                self.extracted_salaries.append(extracted_salary)
+                self.extracted_sal_indices.append(current_len + i)
+
+    def gather(self, job, location, ngram_size=8, vpn=True, max_iters=3):
         """Gathers jpes based on specified job and location until requirements are satisfied. Intended to be called asynchronously with redis"""
         logger = logging.getLogger('extractions')
         logger.info(f'Beginning gathering of extractions. {self}')
@@ -63,6 +83,9 @@ class Extractions:
             # Batch collect encodings for jpes where parsing did not fail
             logger.info('Creating job posting extractors for scraped jobs.')
             current_jpes = [JobPostingExtractor(job_posting) for job_posting in scraped_jobs]
+
+            # Keep track of the job postings that were successfully parsed
+            scraped_jobs_parsed = ScrapedJobs('indeed', job_postings=[job_posting for i, job_posting in enumerate(scraped_jobs) if current_jpes[i].successfully_parsed()])
             current_jpes = [jpe for jpe in current_jpes if jpe.successfully_parsed()]
             logger.info(f'{len(current_jpes)} / {len(scraped_jobs)} job postings successfully parsed.')
             if len(current_jpes) == 0:
@@ -99,7 +122,7 @@ class Extractions:
             logger.info(f'Requirements updated.\n{self}')
 
             # Prepare for next loop iteration
-            self._append_scraped_jobs(scraped_jobs)
+            self._append_scraped_jobs(scraped_jobs, scraped_jobs_parsed)
             self._current_page += 1
 
             if self.all_except_salary_complete():
@@ -107,7 +130,7 @@ class Extractions:
 
         logger.info(f'Gather completed in {self._current_page - 1} pages. Requirements {"" if self.is_complete() else "not"} successfully met.')
 
-    def gather_salary_only(self, job, location, ngram_size=8, vpn=True, max_iters=20):
+    def gather_salary_only(self, job, location, ngram_size=8, vpn=True, max_iters=2):
         logger = logging.getLogger('extractions')
         logger.info(f'----------All other requirements met, now searching for salary specifically (need {self.salary} more).----------')
 
@@ -144,7 +167,7 @@ class Extractions:
             for jpe in current_found_salary_jpes:
                 jpe.set_encodings(ngram_size=ngram_size)
 
-            self._update(current_found_salary_jpes)
+            self._update_salary(current_found_salary_jpes)
 
             self._append_scraped_jobs(scraped_jobs)
 
@@ -166,8 +189,12 @@ class Extractions:
         table.add_row([self.required_years_experience, self.required_degree, self.travel_percentage, self.salary])
         return f'Remaining requirements\n{table}'
 
-    def _append_scraped_jobs(self, scraped_jobs):
+    def _append_scraped_jobs(self, scraped_jobs, scraped_jobs_parsed):
         if self.scraped_jobs is None:
             self.scraped_jobs = scraped_jobs
         else:
             self.scraped_jobs.append(scraped_jobs)
+        if self.scraped_jobs_parsed is None:
+            self.scraped_jobs_parsed = scraped_jobs_parsed
+        else:
+            self.scraped_jobs_parsed.append(scraped_jobs_parsed)

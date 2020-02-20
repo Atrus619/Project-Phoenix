@@ -55,11 +55,11 @@ print(jpe)
 # TODO: Master process to retrieve and coordinate job posting extractions, kick off job for redis server?
 # TODO: Seems to get stuck if not already in vpn mode
 
-# TODO: Convert warn to logdebug, and possibly add a few more debugging statements to help figure out where it is failing
 # TODO: Accept that salary may be incredibly hard to find
 # TODO: Point out bias of travel when posting information on it
 # TODO: Retain postings with salary information, and sort in order from highest to lowest (can show to user as a feature)
 # TODO: Heatmap based on locations found??
+# TODO: Add make for serving website
 
 import src.visualization.visualize as vizz
 from src.classes.Visualizer import Visualizer

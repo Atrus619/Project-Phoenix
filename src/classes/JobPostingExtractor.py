@@ -4,8 +4,12 @@ from nltk.util import ngrams
 import re
 import numpy as np
 import src.pipeline.utils as spu
-from warnings import warn
 from config import Config as cfg
+from src.pipeline.utils import setup_extractions_logger
+import logging
+
+setup_extractions_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 class JobPostingExtractor:
@@ -17,7 +21,7 @@ class JobPostingExtractor:
 
     def set_encodings(self, ngram_size):
         if self._parse_failed:
-            warn('Job posting failed to parse. No encodings will be set.')
+            logger.debug('Job posting failed to parse. No encodings will be set.')
             return
         self._ngram_size = ngram_size
         self._ngrams_list = self._preprocess_job_posting()
@@ -28,14 +32,14 @@ class JobPostingExtractor:
         similarities = self._get_similarities(reference_sentence=reference_sentence, threshold=threshold)
 
         if similarities is None:
-            warn(f'No similarities found for years experience above threshold of {threshold}. Returning None.')
+            logger.debug(f'No similarities found for years experience above threshold of {threshold}. Returning None.')
             return None
 
         years_exp_pattern = r'\d+'
         years_exp = self._scan_valid_ngrams(similarities=similarities, pattern=years_exp_pattern)
 
         if years_exp is None:
-            warn('Could not find a number of years of experience. Returning None.')
+            logger.debug('Could not find a number of years of experience. Returning None.')
             return None
 
         selected_years_exp = np.mean([int(year) for year in years_exp])
@@ -47,14 +51,14 @@ class JobPostingExtractor:
         similarities = self._get_similarities(reference_sentence=reference_sentence, threshold=threshold)
 
         if similarities is None:
-            warn(f'No similarities found for required degree above threshold of {threshold}. Returning None.')
+            logger.debug(f'No similarities found for required degree above threshold of {threshold}. Returning None.')
             return None
 
         degree_pattern = r'(\bbs\b|\bms\b|\bphd\b|bachelor|master|doctorate|advanced)'
         degrees = self._scan_valid_ngrams(similarities=similarities, pattern=degree_pattern)
 
         if degrees is None:
-            warn('Could not find a degree in parsed job posting. Returning None.')
+            logger.debug('Could not find a degree in parsed job posting. Returning None.')
             return None
 
         selected_degrees = []
@@ -74,19 +78,19 @@ class JobPostingExtractor:
         similarities = self._get_similarities(reference_sentence=reference_sentence, threshold=threshold)
 
         if similarities is None:
-            warn(f'No similarities found for travel percentage above threshold of {threshold}. Returning None.')
+            logger.debug(f'No similarities found for travel percentage above threshold of {threshold}. Returning None.')
             return None
 
         travel_percentage_pattern = r'\d+'
         travel_percentages = self._scan_valid_ngrams(similarities=similarities, pattern=travel_percentage_pattern)
 
         if travel_percentages is None:
-            warn('Could not find valid travel percentages. Returning None.')
+            logger.debug('Could not find valid travel percentages. Returning None.')
             return None
 
         travel_percentages = [x for x in travel_percentages if float(x) <= 100]
         if len(travel_percentages) == 0:
-            warn('Could not find travel percentages below 100%.')
+            logger.debug('Could not find travel percentages below 100%.')
             return None
 
         parsed_travel_percentages = [float(travel_percentage) for travel_percentage in travel_percentages]
@@ -99,14 +103,14 @@ class JobPostingExtractor:
         similarities = self._get_similarities(reference_sentence=reference_sentence, threshold=threshold)
 
         if similarities is None:
-            warn(f'No similarities found for salary above threshold of {threshold}. Returning None.')
+            logger.debug(f'No similarities found for salary above threshold of {threshold}. Returning None.')
             return None
 
         rate_pattern = r'(?:[\£\$\€]{1}[,\d]+.?\d*)'
         rates = self._scan_valid_ngrams(similarities=similarities, pattern=rate_pattern)
 
         if rates is None:
-            warn('No valid rates found for salary calculation.')
+            logger.debug('No valid rates found for salary calculation.')
             return None
 
         parsed_rates = [float(rate[1:].replace(',', '')) for rate in rates]
@@ -116,7 +120,7 @@ class JobPostingExtractor:
         period = self._scan_valid_ngrams(similarities=similarities, pattern=period_pattern)
 
         if period is None:
-            warn('No valid periods found for salary calculation. Assuming default of annual period.')
+            logger.debug('No valid periods found for salary calculation. Assuming default of annual period.')
         elif 'hour' in period:
             selected_rate *= 40 * 52
         elif 'da' in period:
@@ -147,7 +151,7 @@ class JobPostingExtractor:
     def _encode_job_posting_ngrams(self):
         """Returns a list of ngrams from job posting as well as the BaaS encoded representations. Returns None if parse fails."""
         if self._parse_failed:
-            warn('Parse failed. Returning None.')
+            logger.debug('Parse failed. Returning None.')
             return None
 
         with self._get_BaaS() as BaaS:
@@ -162,7 +166,7 @@ class JobPostingExtractor:
         :return: NumPy Array, sorted in reverse order by cosine similarity
         """
         if self._parse_failed:
-            warn('Job posting failed to parse. Returning None.')
+            logger.debug('Job posting failed to parse. Returning None.')
             return None
 
         with self._get_BaaS() as BaaS:

@@ -1,9 +1,11 @@
-import os
-import logging
+import numpy as np
 from src.classes.ScrapedJobs import ScrapedJobs
 from wordcloud import WordCloud, STOPWORDS
 from config import Config as cfg
 from src.classes.Extractions import Extractions
+import src.scraping.scraping_google_maps as scraping_google_maps
+import gmplot
+import pandas as pd
 
 
 def create_wordcloud(scraped_jobs, type='descr', path='app/static/imgs/sample_wordcloud.png'):
@@ -29,24 +31,28 @@ def create_wordcloud(scraped_jobs, type='descr', path='app/static/imgs/sample_wo
 
 
 def run_extractions(job, location):
-    setup_extractions_logger(job=job, location=location)
     extractions = Extractions(required_years_experience=5, required_degree=5, travel_percentage=5, salary=5)
     extractions.gather(job, location)
     return extractions
 
 
-def setup_extractions_logger(job, location, log_folder=cfg.log_folder, level=logging.INFO):
-    log_setup = logging.getLogger('extractions')
+def build_heatmap(originally_searched_location, scraped_jobs, output_path=None):
+    if not output_path:
+        output_path = 'my_heatmap.html'
 
-    filename = os.path.join(log_folder, 'extractions', f'{job}_in_{location}.log')
-    os.makedirs(os.path.dirname(filename), exist_ok=True)
-    file_handler = logging.FileHandler(filename, mode='a')
-    formatter = logging.Formatter('%(levelname)s: %(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
-    file_handler.setFormatter(formatter)
+    company_locations = [(job_posting.company, job_posting.location) for job_posting in scraped_jobs]
+    company_location_counts = pd.DataFrame(company_locations, columns=['companies', 'locations']).reset_index().groupby(['companies', 'locations']).count()
 
-    console_handler = logging.StreamHandler()
-    console_handler.setFormatter(formatter)
+    latitudes, longitudes = [], []
+    for (company, location), count in company_location_counts.iterrows():
+        latitude, longitude = scraping_google_maps.get_latitude_and_longitude(location=location, company=company)
+        for i in range(count['index']):
+            latitudes.append(latitude)
+            longitudes.append(longitude)
 
-    log_setup.setLevel(level)
-    log_setup.addHandler(file_handler)
-    log_setup.addHandler(console_handler)
+    gmap_lat, gmap_long = scraping_google_maps.get_latitude_and_longitude(location=originally_searched_location)
+    gmap = gmplot.GoogleMapPlotter(center_lat=gmap_lat, center_lng=gmap_long, zoom=13, apikey=cfg.GCP_API_KEY)
+    gmap.heatmap(latitudes, longitudes, radius=50)
+    gmap.draw(output_path)
+
+    return

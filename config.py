@@ -12,6 +12,8 @@ except ModuleNotFoundError:
 
 
 class Config:
+    GCP_API_KEY = os.environ.get('GCP_API_KEY') or 'get-your-own-gcp-api-key'
+
     # MongoDB
     db = 'phoenixdb'
     collection = 'post'

@@ -1,4 +1,6 @@
+import os
 from config import Config as cfg
+import logging
 
 
 def init_recognized_entities_dict():
