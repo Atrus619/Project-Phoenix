@@ -64,13 +64,14 @@ print(jpe)
 import src.visualization.visualize as vizz
 from src.classes.Visualizer import Visualizer
 from src.classes.Extractions import Extractions
+from src.classes.JobPostingExtractor import JobPostingExtractor
 # viz = Visualizer()
 # test = viz.process_job_in_location('Actuary', 'Chicago')
 
 job, location = 'Actuary', 'Chicago'
-vizz.setup_extractions_logger(job='Actuary', location='Chicago')
-extractions = Extractions(required_years_experience=5, required_degree=5, travel_percentage=5, salary=5)
-extractions.gather(job, location)
+# vizz.setup_extractions_logger(job='Actuary', location='Chicago')
+extractions = Extractions(required_years_experience=5, required_degree=5, travel_percentage=1, salary=5)
+extractions.gather(job, location, ngram_size=8, ngram_stride=3, vpn=True)
 
 jpe = JobPostingExtractor(extractions.scraped_jobs[-5])
 jpe.set_encodings(8)
@@ -85,4 +86,7 @@ salary_pattern = r'(salary|compensation)'
 match = re.findall(salary_pattern, str(jpe))
 print(len(match))
 
-similarities = jpe._get_similarities(reference_sentence='education: bachelors degree, masters degree, phd or higher', threshold=0.89)
+similarities = jpe._get_similarities(reference_sentences=('education: bachelors degree, masters degree, phd or higher', ), threshold=0.89)
+
+from src.classes.Scraper import Scraper
+x = Scraper().scrape_page_indeed('Actuary', 'Chicago', 1, True)

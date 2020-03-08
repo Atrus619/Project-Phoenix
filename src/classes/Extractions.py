@@ -1,3 +1,4 @@
+from collections import namedtuple
 import re
 import requests
 from src.classes.Scraper import Scraper
@@ -21,7 +22,7 @@ class Extractions:
         self.travel_percentage = travel_percentage
         self.salary = salary
 
-        self.scraped_jobs, self.scraped_jobs_parsed = None, None
+        self.scraped_jobs, self.scraped_jobs_parsed = [], []
         self.extracted_required_years_experience, self.extracted_required_degrees, self.extracted_travel_percentages, self.extracted_salaries = [], [], [], []
         self.extracted_rye_indices, self.extracted_rd_indices, self.extracted_tp_indices, self.extracted_sal_indices = [],  [], [], []
 
@@ -66,15 +67,15 @@ class Extractions:
                 self.extracted_salaries.append(extracted_salary)
                 self.extracted_sal_indices.append(current_len + i)
 
-    def gather(self, job, location, ngram_size=8, vpn=True, max_iters=3):
+    def gather(self, job, location, ngram_size=8, ngram_stride=2, vpn=False, max_iters=3, max_salary_only_iters=5, source='indeed'):
         """Gathers jpes based on specified job and location until requirements are satisfied. Intended to be called asynchronously with redis"""
-        logger = logging.getLogger('extractions')
-        logger.info(f'Beginning gathering of extractions. {self}')
+        logger.info(f'Beginning gathering of extractions.\n{self}')
         while (not self.is_complete()) and (self._current_page <= max_iters):
             # Scrape an entire page off of indeed
             logger.info(f'-----Scraping page {self._current_page} of indeed for {job} in {location} {"" if vpn else "not"} using vpn.-----')
             try:
-                scraped_jobs = Scraper().scrape_page_indeed(job_title=job, location=location, page=self._current_page, vpn=vpn)
+                if source == 'indeed':  # Only option currently TODO: Add more options
+                    scraped_jobs = Scraper().scrape_page_indeed(job_title=job, location=location, page=self._current_page, vpn=vpn)
             except requests.exceptions.ConnectionError as e:
                 logger.warn(f'{e}')
                 logger.info(f'Due to connection error, skipping current page ({self._current_page}) and moving to the next one.')
@@ -82,11 +83,13 @@ class Extractions:
 
             # Batch collect encodings for jpes where parsing did not fail
             logger.info('Creating job posting extractors for scraped jobs.')
-            current_jpes = [JobPostingExtractor(job_posting) for job_posting in scraped_jobs]
+            current_jpes = []
+            for job_posting in scraped_jobs:
+                jpe = JobPostingExtractor(job_posting)
+                if jpe.successfully_parsed():
+                    current_jpes.append(jpe)
+            scraped_jobs_parsed = ScrapedJobs(job_postings=[jpe.get_job_posting() for jpe in current_jpes], source=source)  # Keep track of the job postings that were successfully parsed
 
-            # Keep track of the job postings that were successfully parsed
-            scraped_jobs_parsed = ScrapedJobs('indeed', job_postings=[job_posting for i, job_posting in enumerate(scraped_jobs) if current_jpes[i].successfully_parsed()])
-            current_jpes = [jpe for jpe in current_jpes if jpe.successfully_parsed()]
             logger.info(f'{len(current_jpes)} / {len(scraped_jobs)} job postings successfully parsed.')
             if len(current_jpes) == 0:
                 logger.info(f'Since zero job postings from this page ({self._current_page}) were successfully parsed, skipping to next page.')
@@ -96,6 +99,7 @@ class Extractions:
             current_jpes_ngrams_indices = []
             for jpe in current_jpes:
                 jpe._ngram_size = ngram_size
+                jpe._ngram_stride = ngram_stride
                 jpe._ngrams_list = jpe._preprocess_job_posting()
 
                 current_len = len(current_ngrams_list)
@@ -125,13 +129,12 @@ class Extractions:
             self._append_scraped_jobs(scraped_jobs, scraped_jobs_parsed)
             self._current_page += 1
 
-            if self.all_except_salary_complete():
-                self.gather_salary_only(job=job, location=location, ngram_size=ngram_size, vpn=vpn, max_iters=20)
+            if self.all_except_salary_complete() and (self.salary > 0):
+                self.gather_salary_only(job=job, location=location, ngram_size=ngram_size, ngram_stride=ngram_stride, vpn=vpn, max_iters=max_salary_only_iters, source=source)
 
         logger.info(f'Gather completed in {self._current_page - 1} pages. Requirements {"" if self.is_complete() else "not"} successfully met.')
 
-    def gather_salary_only(self, job, location, ngram_size=8, vpn=True, max_iters=2):
-        logger = logging.getLogger('extractions')
+    def gather_salary_only(self, job, location, ngram_size, ngram_stride, vpn, max_iters, source):
         logger.info(f'----------All other requirements met, now searching for salary specifically (need {self.salary} more).----------')
 
         while (self.salary > 0) and (self._current_page <= max_iters):
@@ -146,8 +149,12 @@ class Extractions:
 
             # Batch collect encodings for jpes where parsing did not fail
             logger.info('Creating job posting extractors for scraped jobs for salaries only.')
-            current_jpes = [JobPostingExtractor(job_posting) for job_posting in scraped_jobs]
-            current_jpes = [jpe for jpe in current_jpes if jpe.successfully_parsed()]
+            current_jpes = []
+            for job_posting in scraped_jobs:
+                jpe = JobPostingExtractor(job_posting)
+                if jpe.successfully_parsed():
+                    current_jpes.append(jpe)
+
             logger.info(f'{len(current_jpes)} / {len(scraped_jobs)} job postings successfully parsed.')
             if len(current_jpes) == 0:
                 logger.info(f'Since zero job postings from this page ({self._current_page}) were successfully parsed, skipping to next page.')
@@ -155,9 +162,11 @@ class Extractions:
 
             logger.info(f'Skimming for salary information in {len(current_jpes)} postings.')
             current_found_salary_jpes = []
-            for jpe in current_jpes:
-                if self._salary_present(jpe):
+            current_found_salary_parseable_job_postings = []
+            for i, jpe in enumerate(current_jpes):
+                if jpe.get_job_posting().salary or self._salary_present(jpe):
                     current_found_salary_jpes.append(jpe)
+                    current_found_salary_parseable_job_postings.append(jpe.get_job_posting())
 
             if len(current_found_salary_jpes) == 0:
                 logger.info(f'No salary information found on current page {self._current_page}. Skipping to next page.')
@@ -165,11 +174,13 @@ class Extractions:
 
             logger.info(f'Salary information potentially found in {len(current_found_salary_jpes)} postings. Parsing for salary amount and adding now.')
             for jpe in current_found_salary_jpes:
-                jpe.set_encodings(ngram_size=ngram_size)
+                if not jpe.get_job_posting().salary:  # If salary found in job posting span, don't need to consult BERT
+                    jpe.set_encodings(ngram_size=ngram_size, ngram_stride=ngram_stride)
 
             self._update_salary(current_found_salary_jpes)
 
-            self._append_scraped_jobs(scraped_jobs)
+            scraped_jobs_parsed = ScrapedJobs(job_postings=current_found_salary_parseable_job_postings, source=source)
+            self._append_scraped_jobs(scraped_jobs, scraped_jobs_parsed)
 
             logger.info(f'Requirements updated (searching for salary primarily).\n{self}')
             self._current_page += 1
@@ -187,14 +198,55 @@ class Extractions:
         table = PrettyTable()
         table.field_names = ['Years Experience', 'Required Degree', 'Travel Percentage', 'Salary']
         table.add_row([self.required_years_experience, self.required_degree, self.travel_percentage, self.salary])
-        return f'Remaining requirements\n{table}'
+        return f'Remaining requirements:\n{table}'
 
     def _append_scraped_jobs(self, scraped_jobs, scraped_jobs_parsed):
-        if self.scraped_jobs is None:
+        """
+        :param scraped_jobs: list of job posting extractors
+        :param scraped_jobs_parsed: single scraped_jobs object
+        :return:
+        """
+        if len(self.scraped_jobs) == 0:
             self.scraped_jobs = scraped_jobs
         else:
             self.scraped_jobs.append(scraped_jobs)
-        if self.scraped_jobs_parsed is None:
+        if len(self.scraped_jobs_parsed) == 0:
             self.scraped_jobs_parsed = scraped_jobs_parsed
         else:
             self.scraped_jobs_parsed.append(scraped_jobs_parsed)
+
+    def get_scraped_jobs(self, attribute=None):
+        assert attribute in (None, 'rye', 'sal', 'tp', 'rd')
+        if attribute == 'rye':
+            return ScrapedJobs(self.scraped_jobs_parsed[self.extracted_rye_indices])
+        elif attribute == 'sal':
+            return ScrapedJobs(self.scraped_jobs_parsed[self.extracted_sal_indices])
+        elif attribute == 'tp':
+            return ScrapedJobs(self.scraped_jobs_parsed[self.extracted_tp_indices])
+        elif attribute == 'rd':
+            return ScrapedJobs(self.scraped_jobs_parsed[self.extracted_rd_indices])
+        else:  # None
+            return self.scraped_jobs_parsed
+
+    def __len__(self, parsed=True):
+        if parsed:
+            return len(self.scraped_jobs_parsed)
+        else:
+            return len(self.scraped_jobs)
+
+    def __getitem__(self, index, parsed=True):
+        ExtractionsOutput = namedtuple('ExtractionsOutput', 'job_posting required_years_experience required_degree travel_percentage salary')
+        if parsed:
+            rye = self.extracted_required_years_experience[self.extracted_rye_indices.index(index)] if index in self.extracted_rye_indices else None
+            rd = self.extracted_required_degrees[self.extracted_rd_indices.index(index)] if index in self.extracted_rd_indices else None
+            tp = self.extracted_travel_percentages[self.extracted_tp_indices.index(index)] if index in self.extracted_tp_indices else None
+            sal = self.extracted_salaries[self.extracted_sal_indices.index(index)] if index in self.extracted_sal_indices else None
+
+            return ExtractionsOutput(self.scraped_jobs_parsed[index], rye, rd, tp, sal)
+        else:
+            adjusted_index = self.scraped_jobs_parsed.index(self.scraped_jobs[index]) if self.scraped_jobs[index] in self.scraped_jobs_parsed else None
+            if adjusted_index:
+                return self.__getitem__(adjusted_index, parsed=True)
+            else:
+                return ExtractionsOutput(self.scraped_jobs[index], None, None, None, None)
+

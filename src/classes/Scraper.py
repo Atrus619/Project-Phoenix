@@ -54,6 +54,7 @@ class Scraper:
         companies = indeed.extract_company_from_result(soup)
         locations = indeed.extract_location_from_result(soup)
         links = indeed.extract_job_link_from_result(soup)
+        salaries = indeed.extract_salary_from_result(soup)
         descrs = []
 
         for j, link in enumerate(links):
@@ -62,7 +63,7 @@ class Scraper:
             except (requests.exceptions.SSLError, requests.exceptions.ConnectionError) as e:
                 descrs.append('Description Unavailable')
 
-        job_postings = [JobPosting(*x) for x in zip(jobs, companies, locations, links, descrs)]
+        job_postings = [JobPosting(*x) for x in zip(jobs, companies, locations, salaries, links, descrs)]
         scraped_jobs = ScrapedJobs(source='indeed', job_postings=job_postings)
 
         return scraped_jobs

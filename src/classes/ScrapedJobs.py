@@ -2,7 +2,7 @@ from prettytable import PrettyTable
 
 
 class ScrapedJobs:
-    def __init__(self, source, job_postings):
+    def __init__(self, job_postings, source=None):
         self.source = source
         self._job_postings = job_postings
 
@@ -15,8 +15,10 @@ class ScrapedJobs:
     def __str__(self):
         return str(self._table)
 
-    def __getitem__(self, item):
-        return self._job_postings[item]
+    def __getitem__(self, index):
+        if not isinstance(index, (tuple, list)):
+            return self._job_postings[index]
+        return [self._job_postings[i] for i in index]
 
     def __iter__(self):
         yield from self._job_postings
@@ -24,9 +26,9 @@ class ScrapedJobs:
     def _build_table(self):
         """Run on construction so that there is a pretty printable format for this class"""
         table = PrettyTable()
-        table.field_names = ['Index', 'Job Title', 'Company', 'Location']
+        table.field_names = ['Index', 'Job Title', 'Company', 'Location', 'Salary']
         for index, posting in enumerate(self._job_postings):
-            table.add_row([index, posting.job_title, posting.company, posting.location])
+            table.add_row([index, posting.job_title, posting.company, posting.location, posting.salary if posting.salary else ''])
         self._table = table
 
     def append(self, scraped_jobs):

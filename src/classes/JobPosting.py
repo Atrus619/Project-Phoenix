@@ -4,7 +4,7 @@ import re
 from config import Config as cfg
 
 
-class JobPosting(namedtuple('JobPosting', 'job_title company location link descr')):
+class JobPosting(namedtuple('JobPosting', 'job_title company location salary link descr')):
     def parse(self):
         soup = BeautifulSoup(self.descr, "html.parser")
         raw_descr = soup.find_all(name='div', attrs={'id': 'jobDescriptionText'})

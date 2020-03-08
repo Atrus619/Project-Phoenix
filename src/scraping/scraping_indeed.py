@@ -139,3 +139,15 @@ def extract_description_html_from_link(session, link, user_agent, og_page_url):
     url = "https://www.indeed.com" + link
     page = su.custom_get(session=session, url=url, headers=headers)
     return page.text
+
+
+def extract_salary_from_result(soup):
+    salaries = []
+    for div in soup.find_all(name="div", attrs={"class": "row"}):
+        salary = div.find_all(name="span", attrs={"class": "salaryText"})
+        if len(salary) > 0:
+            for b in salary:
+                salaries.append(b.text.strip())
+        else:
+            salaries.append(None)
+    return salaries
