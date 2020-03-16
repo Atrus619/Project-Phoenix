@@ -22,10 +22,6 @@ user_io.on('connection', function(socket){
   socket.on('disconnect', function(){
     console.log('user disconnected');
   });
-  // socket.on('connect', function(){
-  //   console.log('CONNECT!')
-  //   user_io.emit('user connect', '')
-  // });
   socket.on('user message', function(msg){
     console.log('User:', msg)
     user_io.emit('user message', msg);
