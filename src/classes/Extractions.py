@@ -1,3 +1,4 @@
+from prettytable import PrettyTable
 from collections import namedtuple
 import re
 import requests
@@ -27,6 +28,7 @@ class Extractions:
         self.extracted_rye_indices, self.extracted_rd_indices, self.extracted_tp_indices, self.extracted_sal_indices = [],  [], [], []
 
         self._current_page = 1
+        self._table = None
 
     def is_complete(self):
         return max(self.required_years_experience, self.required_degree, self.travel_percentage, self.salary) <= 0
@@ -132,7 +134,8 @@ class Extractions:
             if self.all_except_salary_complete() and (self.salary > 0):
                 self.gather_salary_only(job=job, location=location, ngram_size=ngram_size, ngram_stride=ngram_stride, vpn=vpn, max_iters=max_salary_only_iters, source=source)
 
-        logger.info(f'Gather completed in {self._current_page - 1} pages. Requirements {"" if self.is_complete() else "not"} successfully met.')
+        self._build_table()
+        logger.info(f'Gather completed in {self._current_page - 1} pages. Requirements{"" if self.is_complete() else " not"} successfully met.')
 
     def gather_salary_only(self, job, location, ngram_size, ngram_stride, vpn, max_iters, source):
         logger.info(f'----------All other requirements met, now searching for salary specifically (need {self.salary} more).----------')
@@ -250,3 +253,17 @@ class Extractions:
             else:
                 return ExtractionsOutput(self.scraped_jobs[index], None, None, None, None)
 
+    def _build_table(self):
+        # TODO: This probably needs to get fleshed out in a more visual-friendly format
+        table = PrettyTable()
+        table.field_names = ['Index', 'Job Title', 'Company', 'Location', 'Years Experience', 'Degree', 'Travel Percentage', 'Salary', 'Link']
+        for index in range(len(self)):
+            job_posting = self[index].job_posting
+            table.add_row([index, job_posting.job_title, job_posting.company, job_posting.location,
+                           self[index].required_years_experience, self[index].required_degree, self[index].travel_percentage, self[index].salary,
+                           job_posting.link])
+        self._table = table
+        return
+
+    def get_table(self):
+        return str(self._table)

@@ -15,13 +15,17 @@ app.use(express.static(path.join(__dirname, 'static')))
 
 user_io.on('connection', function(socket){
   console.log('a user connected');
+  if (Object.keys(user_io.sockets.clients().connected).length > 1){
+    console.log('2 users are connected!');
+    user_io.emit('user connect', '')
+  }
   socket.on('disconnect', function(){
     console.log('user disconnected');
   });
-  socket.on('connect', function(){
-    console.log('CONNECT!')
-    user_io.emit('user connect', '')
-  });
+  // socket.on('connect', function(){
+  //   console.log('CONNECT!')
+  //   user_io.emit('user connect', '')
+  // });
   socket.on('user message', function(msg){
     console.log('User:', msg)
     user_io.emit('user message', msg);

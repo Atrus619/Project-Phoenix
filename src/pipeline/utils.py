@@ -80,3 +80,20 @@ def setup_extractions_logger(name, log_folder=cfg.log_folder, level=logging.INFO
     log_setup.setLevel(level)
     log_setup.addHandler(file_handler)
     log_setup.addHandler(console_handler)
+
+
+def setup_viz_logger(name, log_folder=cfg.log_folder, level=logging.INFO):
+    log_setup = logging.getLogger(name)
+
+    filename = os.path.join(log_folder, 'viz', f'log.log')
+    os.makedirs(os.path.dirname(filename), exist_ok=True)
+    file_handler = logging.FileHandler(filename, mode='a')
+    formatter = logging.Formatter('%(levelname)s: %(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
+    file_handler.setFormatter(formatter)
+
+    console_handler = logging.StreamHandler()
+    console_handler.setFormatter(formatter)
+
+    log_setup.setLevel(level)
+    log_setup.addHandler(file_handler)
+    log_setup.addHandler(console_handler)

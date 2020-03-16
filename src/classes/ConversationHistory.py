@@ -51,7 +51,8 @@ class ConversationHistory:
         user_msgs_copy = deepcopy(self.user_msgs)
 
         # Remove first message as it is irrelevant to conversation.
-        bot_msgs_copy.pop(0)
+        if len(bot_msgs_copy) > 0:
+            bot_msgs_copy.pop(0)
 
         # If len of bot_msgs == len of user_msgs, then the bot has already replied and we want to ignore this latest reply. Useful for debugging.
         if len(bot_msgs_copy) == len(self.user_msgs):

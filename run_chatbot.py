@@ -15,6 +15,7 @@ import time
 from prefect import Flow
 from src.pipeline.utils import clean_up, init_BaaS
 from src.classes.SIO import SIO
+import socketio
 
 
 @task
@@ -55,8 +56,14 @@ def run_chatbot(model_name,
     # Interact
     try:
         if is_served:
-            address = f'http://{cfg.chatbot_host}:{cfg.chatbot_port}'
-            SIO(chatbot=chatbot, address=address)
+            while True:
+                try:
+                    address = f'http://{cfg.chatbot_host}:{cfg.chatbot_port}'
+                    SIO(chatbot=chatbot, address=address)
+                except socketio.exceptions.ConnectionError as e:
+                    print(f'Error: {e}. Waiting 5 seconds and retrying...')
+                    time.sleep(5)
+                    continue
         else:
             chatbot.console_interact()
 

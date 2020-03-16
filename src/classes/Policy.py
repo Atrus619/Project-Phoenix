@@ -65,7 +65,7 @@ class Policy:
         assert recognized_entities is not None
         if (len(recognized_entities["J"]) > 0) and (len(recognized_entities["L"]) > 0):  # Only return information about the first one asked for now.
             job, location = recognized_entities["J"][0], recognized_entities["L"][0]
-            reply = f'You are asking for information about a {job} in {location}. ' \
+            reply = f'You are asking for information about {job} jobs in {location}. ' \
                     f'Please wait a moment while I collect the relevant information for you.'
             self.visualizer.process_job_in_location(job=job, location=location)
             return reply

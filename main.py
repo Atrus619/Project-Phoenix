@@ -55,18 +55,21 @@ print(jpe)
 # TODO: Master process to retrieve and coordinate job posting extractions, kick off job for redis server?
 # TODO: Seems to get stuck if not already in vpn mode
 
-# TODO: Accept that salary may be incredibly hard to find
 # TODO: Point out bias of travel when posting information on it
 # TODO: Retain postings with salary information, and sort in order from highest to lowest (can show to user as a feature)
 # TODO: Heatmap based on locations found??
 # TODO: Add make for serving website
 
+from src.classes.Scraper import Scraper
+Scraper().rotate_ip()
+
 import src.visualization.visualize as vizz
 from src.classes.Visualizer import Visualizer
 from src.classes.Extractions import Extractions
 from src.classes.JobPostingExtractor import JobPostingExtractor
-# viz = Visualizer()
-# test = viz.process_job_in_location('Actuary', 'Chicago')
+viz = Visualizer()
+test = viz.process_job_in_location('Actuary', 'Chicago')
+viz.is_task_complete()
 
 job, location = 'Actuary', 'Chicago'
 # vizz.setup_extractions_logger(job='Actuary', location='Chicago')
@@ -90,3 +93,9 @@ similarities = jpe._get_similarities(reference_sentences=('education: bachelors 
 
 from src.classes.Scraper import Scraper
 x = Scraper().scrape_page_indeed('Actuary', 'Chicago', 1, True)
+
+# Running server
+./start_bert_as_service.sh
+rq worker extractions
+python3 run_chatbot.py -n dajan2 -s
+nodemon app/app.js
