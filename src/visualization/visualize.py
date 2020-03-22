@@ -48,7 +48,7 @@ def run_extractions(job, location):
     logger.info('Extractions complete.')
 
     # TODO: Add specific locations rather than one generic default location
-    threads = []
+    threads = list()
     threads.append(threading.Thread(target=create_wordcloud, args=(extractions.scraped_jobs_parsed, 'descr', 'app/static/imgs/sample_wordcloud.png')))
     threads.append(threading.Thread(target=build_heatmap, args=(extractions.scraped_jobs_parsed, location, 'app/static/imgs/heatmap.html')))
     threads.append(threading.Thread(target=describe_extractions, args=(extractions, 'app/static/imgs/description.pkl')))

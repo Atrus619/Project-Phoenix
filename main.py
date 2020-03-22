@@ -55,10 +55,11 @@ print(jpe)
 # TODO: Master process to retrieve and coordinate job posting extractions, kick off job for redis server?
 # TODO: Seems to get stuck if not already in vpn mode
 
-# TODO: Point out bias of travel when posting information on it
 # TODO: Retain postings with salary information, and sort in order from highest to lowest (can show to user as a feature)
-# TODO: Heatmap based on locations found??
 # TODO: Add make for serving website
+
+# TODO: Build out decision tree for chatbot logic
+# TODO: Train more SVM intent classifiers
 
 from src.classes.Scraper import Scraper
 Scraper().rotate_ip()
@@ -68,10 +69,10 @@ from src.classes.Visualizer import Visualizer
 from src.classes.Extractions import Extractions
 from src.classes.JobPostingExtractor import JobPostingExtractor
 viz = Visualizer()
-test = viz.process_job_in_location('Actuary', 'Chicago')
+test = viz.process_job_in_location('Software Engineer', 'San Francisco')
 viz.is_task_complete()
 
-job, location = 'Actuary', 'Chicago'
+job, location = 'Software Engineer', 'San Francisco'
 # vizz.setup_extractions_logger(job='Actuary', location='Chicago')
 extractions = Extractions(required_years_experience=5, required_degree=5, travel_percentage=1, salary=5)
 extractions.gather(job, location, ngram_size=8, ngram_stride=3, vpn=True)
@@ -96,6 +97,6 @@ x = Scraper().scrape_page_indeed('Actuary', 'Chicago', 1, True)
 
 # Running server
 ./start_bert_as_service.sh
-rq worker extractions
+rq worker extractor
 python3 run_chatbot.py -n dajan2 -s
 nodemon app/app.js

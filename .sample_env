@@ -1,0 +1,10 @@
+sudo_password=???
+ipvanish_password=???
+ip=192.168.1.73
+
+chatbot_host=localhost
+chatbot_port=3000
+
+bert_model_dir=downloads/uncased_L-24_H-1024_A-16/
+
+GCP_API_KEY=???
