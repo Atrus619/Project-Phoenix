@@ -18,4 +18,4 @@ https://nlp.stanford.edu/software/CRF-NER.shtml
 
 `stu.download_pretrained_small_talk_model()`
 ## Set up .env file
-See .sample_env for getting started
+See .sample_env for a list of entries
