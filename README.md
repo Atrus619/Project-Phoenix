@@ -12,4 +12,5 @@ https://nlp.stanford.edu/software/CRF-NER.shtml
 
 ## Be sure to set up SmallTalk model first time (downloading can take a bit of time)
 `import src.models.SmallTalk.utils as stu`
+
 `stu.download_pretrained_small_talk_model()`
