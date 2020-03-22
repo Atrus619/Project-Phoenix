@@ -14,3 +14,15 @@ https://nlp.stanford.edu/software/CRF-NER.shtml
 `import src.models.SmallTalk.utils as stu`
 
 `stu.download_pretrained_small_talk_model()`
+## Set up .env file
+Needs the following:
+sudo_password=???
+ipvanish_password=??? (optional)
+ip=???
+
+chatbot_host=localhost
+chatbot_port=3000
+
+bert_model_dir=path_to_bert_download
+
+GCP_API_KEY=enter_gcp_api_key_here
