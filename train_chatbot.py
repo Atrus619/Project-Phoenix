@@ -22,7 +22,8 @@ def make_flow(model_name=cfg.default_model_name,
               remove_caps=True,
               spawn_chatbot=False,
               add_conv_detail=False,
-              response_delay=False):
+              response_delay=False,
+              cuda=True):
     with Flow(model_name) as flow:
         # Set up logger
         logger = utilities.logging.get_logger(cfg.chatbot_training_log_name)
@@ -63,6 +64,7 @@ def make_flow(model_name=cfg.default_model_name,
             final_status = run_chatbot(model_name=model_name,
                                        add_conv_detail=add_conv_detail,
                                        response_delay=response_delay,
+                                       cuda=cuda,
                                        upstream_tasks=[final_training_task])
         else:
             final_status = final_training_task
@@ -95,13 +97,16 @@ if __name__ == "__main__":
     parser.add_argument("--spawn_chatbot", dest='spawn_chatbot', action='store_true',
                         help='Whether to spawn the chatbot immediately after training to begin testing. Off by default.')
 
+    parser.add_argument('-cpu', dest='cpu', action='store_true',
+                        help='Whether to run model inference on cpu (False by default, and therefore run on gpu)')
+
     parser.add_argument("--add_conv_detail", dest='add_conv_detail', action='store_true',
                         help="Whether to print out the full conversation at the end with annotations by the chatbot's interpreter. Off by default.")
 
     parser.add_argument("--response_delay", type=int, default=0,
                         help='Number of seconds to add as a stochastic artificial delay for chat bot. Defaults to 0 seconds (no delay).')
 
-    parser.set_defaults(reuse_existing=True, remove_caps=True, spawn_chatbot=False, add_conv_detail=False)
+    parser.set_defaults(reuse_existing=True, remove_caps=True, spawn_chatbot=False, add_conv_detail=False, cpu=False)
     args = parser.parse_args()
 
     # Create flow

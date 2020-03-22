@@ -24,7 +24,8 @@ def run_chatbot(model_name,
                 response_delay=2,
                 is_served=False,
                 show_personality=False,
-                personality=None):
+                personality=None,
+                cuda=True):
     # Interpreter, pretrained elsewhere
     interpreter = Interpreter()
     interpreter_dict_path = get_interpreter_dict_path(model_name=model_name)
@@ -32,7 +33,7 @@ def run_chatbot(model_name,
 
     # SmallTalk
     dir = stu.download_pretrained_small_talk_model()
-    small_talk = SmallTalk(name='Test_SmallTalk_Pretrained', model_type='openai-gpt', model_name=dir, opt_level='O1')
+    small_talk = SmallTalk(name='Test_SmallTalk_Pretrained', model_type='openai-gpt', model_name=dir, device='cuda:0' if cuda else 'cpu', opt_level='O1' if cuda else None)
 
     # Policy
     def delay_func():
@@ -79,6 +80,9 @@ if __name__ == "__main__":
     parser.add_argument('-n', '--model_name', type=str, default='model',
                         help='Title of model. Used for storing model as serialized file.')
 
+    parser.add_argument('-cpu', dest='cpu', action='store_true',
+                        help='Whether to run model inference on cpu (False by default, and therefore run on gpu)')
+
     parser.add_argument("--add_conv_detail", dest='add_conv_detail', action='store_true',
                         help="Whether to print out the full conversation at the end with annotations by the chatbot's interpreter. Off by default.")
 
@@ -94,18 +98,19 @@ if __name__ == "__main__":
     parser.add_argument('-p', '--personality', type=str, default='',
                         help='Optionally enter a personality for the bot to use. Will only use the first 5 sentences passed. Keep the sentences fairly short.')
 
-    parser.set_defaults(add_conv_detail=False, served=False)
+    parser.set_defaults(add_conv_detail=False, served=False, cpu=False)
     args = parser.parse_args()
 
     with Flow(f'{args.model_name} chatbot test') as flow:
-        BaaS_freshly_initialized = init_BaaS()
+        BaaS_freshly_initialized = init_BaaS(cuda=not args.cpu)
         final_status = run_chatbot(model_name=args.model_name,
                                    add_conv_detail=args.add_conv_detail,
                                    response_delay=args.response_delay,
                                    upstream_tasks=[BaaS_freshly_initialized],
                                    is_served=args.served,
                                    show_personality=args.show_personality,
-                                   personality=None if args.personality == '' else args.personality)
+                                   personality=None if args.personality == '' else args.personality,
+                                   cuda=not args.cpu)
         clean_up(pkill_BaaS=BaaS_freshly_initialized,
                  upstream_tasks=[final_status])
         flow.set_reference_tasks([final_status])

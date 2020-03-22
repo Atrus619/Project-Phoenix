@@ -38,11 +38,14 @@ def kill_BaaS():
 
 
 @task
-def init_BaaS(num_workers=1):
+def init_BaaS(cuda=True, num_workers=1):
     # Safely starts a BaaS process (even if one is already going)
     # Returns True if a new BaaS was started, False otherwise
     def start_BaaS_subprocess(num_workers):
-        subprocess.Popen(['bert-serving-start', '-model_dir', cfg.bert_dir, '-num_worker', str(num_workers)])
+        if cuda:
+            subprocess.Popen(['bert-serving-start', '-model_dir', cfg.bert_dir, '-num_worker', str(num_workers)])
+        else:
+            subprocess.Popen(['bert-serving-start', '-model_dir', cfg.bert_dir, '-num_worker', str(num_workers), '-cpu'])
 
     if is_port_in_use(cfg.bert_port):
         return False
