@@ -16,6 +16,7 @@ https://nlp.stanford.edu/software/CRF-NER.shtml
 `stu.download_pretrained_small_talk_model()`
 ## Set up .env file
 Needs the following:
+
 sudo_password=???
 ipvanish_password=??? (optional)
 ip=???
