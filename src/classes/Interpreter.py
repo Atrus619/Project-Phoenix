@@ -5,7 +5,7 @@ import pandas as pd
 from sklearn.model_selection import GridSearchCV, cross_val_predict
 from sklearn.svm import SVC
 import pickle as pkl
-from src.classes.utils import init_recognized_entities_dict
+from src.classes.Enums import StateBase, IntentBase, IntentFollowUp, EntityBase, RecognizedEntities, EntityRequirements
 
 
 class Interpreter:
@@ -30,31 +30,6 @@ class Interpreter:
 
         return raw_text
 
-    def parse_user_msg(self, raw_text):
-        raw_text = self.preprocess_user_raw_text(raw_text=raw_text)
-
-        latent_vector = self.preprocess_input_single(sentence=raw_text, use_entity_features=True)
-        recognized_entities = self.get_recognized_entities(sentence=raw_text)
-        classified_intent = self.get_intent(sentence=raw_text)
-
-        return raw_text, latent_vector, recognized_entities, classified_intent
-
-    def parse_user_msg_follow_up(self, raw_text, missing_entity):
-        if self.remove_caps:
-            raw_text = raw_text.lower()
-
-        latent_vector = self.preprocess_input_single(sentence=raw_text, use_entity_features=False)
-        classified_intent = self.get_intent_follow_up(sentence=raw_text)
-
-        recognized_entities = init_recognized_entities_dict()
-        if classified_intent == 'Acceptance':  # Use entire raw text as missing entity TODO: Clean up to extract just the piece we want?
-            recognized_entities[missing_entity].append(raw_text)
-        else:
-            # Just pass to return the empty, initialized recognized_entities dict
-            pass
-
-        return raw_text, latent_vector, recognized_entities, classified_intent
-
     def tag_ner(self, sentence):
         return self.ner_tagger.tag(nltk.word_tokenize(sentence))
 
@@ -62,17 +37,19 @@ class Interpreter:
     def count_ner(tagged_sentence):
         return Counter(tag[1] for tag in tagged_sentence)
 
-    def get_recognized_entities(self, sentence):
+    def get_recognized_entities(self, sentence, recognized_entities=None):
         """
         Output recognized entities is a dictionary.
         Key is entity letter ('J' for job, 'L' for location)
         Value is a list of recognized entities as strings, one string for each full recognized entity
+        recognized_entities arg is passed if there are prior recognized entities to be added
         """
-
         tagged_sentence = self.tag_ner(sentence)
         entity_features = self.get_features_single(sentence)
 
-        output_dict = init_recognized_entities_dict()
+        if not recognized_entities:
+            recognized_entities = RecognizedEntities()
+
         for entity_feature in entity_features:
             current_index = 0
 
@@ -84,16 +61,22 @@ class Interpreter:
                         current_index += 1
 
                     # Concatenate stream of same entity
-                    output_dict[entity_feature].append(tagged_sentence[current_index][0])
+                    recognized_entities.add(EntityBase.factory(entity_feature), tagged_sentence[current_index][0])
                     current_index += 1
                     while tagged_sentence[current_index][1] == entity_feature:
-                        output_dict[entity_feature][-1] += ' ' + tagged_sentence[current_index][0]
+                        recognized_entities.append_to_latest(EntityBase.factory(entity_feature), tagged_sentence[current_index][0])
                         current_index += 1
 
             except IndexError:
                 continue
 
-        return output_dict
+        return recognized_entities
+
+    @staticmethod
+    def get_missing_entities(classified_intent, recognized_entities):
+        required_entities = classified_intent.get_requirements()
+        required_entities.subtract_recognized_entities(recognized_entities)
+        return required_entities
 
     def get_intent(self, sentence):
         assert self.intent_classifier is not None, "Intent classifier not yet trained"

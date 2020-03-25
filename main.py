@@ -51,15 +51,22 @@ print(jpe.extract_required_degree())
 print(jpe.extract_travel_percentage())
 print(jpe)
 
-# TODO: Add extract benefits (will be more challenging to implement)
-# TODO: Master process to retrieve and coordinate job posting extractions, kick off job for redis server?
-# TODO: Seems to get stuck if not already in vpn mode
+# List of todos!
+# TODO: Add state / intent to chatbot
+    # TODO: In progress, but convert all intent / state / entities over to enum class
+# TODO: Clean up decision logic
+# TODO: Add more intent classifiers
+# TODO: Clean up chatbot page
+# TODO: Add functionality to send links from chatbot to download certain objects
+# TODO: Build out these objects sent back
 
+# TODO: Containerize application?
+# TODO: Single file to run app
+
+# TODO: May want to split state for seeking additional information into two (initially seeking new information and seeking information for the second + time). This will cut down on redundancy in the convo.
+# TODO: Seems to get stuck if not already in vpn mode???
 # TODO: Retain postings with salary information, and sort in order from highest to lowest (can show to user as a feature)
-# TODO: Add make for serving website
-
-# TODO: Build out decision tree for chatbot logic
-# TODO: Train more SVM intent classifiers
+# TODO: Add extract benefits (will be more challenging to implement)
 
 from src.classes.Scraper import Scraper
 Scraper().rotate_ip()

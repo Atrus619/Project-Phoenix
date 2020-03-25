@@ -48,7 +48,7 @@ def make_flow(model_name=cfg.default_model_name,
                                      upstream_tasks=[status_allow_user_update_ner])
 
         # 4. Train Intent Classifier
-        BaaS_freshly_initialized = init_BaaS()
+        BaaS_freshly_initialized = init_BaaS(cuda=cuda)
         status_train_intent_and_initialize_interpreter = train_intent_and_initialize_interpreter(data_path=path, remove_caps=remove_caps, model_name=model_name,
                                                                                                  upstream_tasks=[status_train_ner, BaaS_freshly_initialized])
 

@@ -1,5 +1,6 @@
 from collections import namedtuple
 from copy import deepcopy
+from src.classes.Enums import StateBase, IntentBase, IntentFollowUp
 
 
 class ConversationHistory:
@@ -8,7 +9,7 @@ class ConversationHistory:
     """
     def __init__(self):
         self.user_msgs, self.bot_msgs = [], []
-        self.ParsedUserMsg = namedtuple('ParsedUserMsg', 'raw_text latent_vector recognized_entities classified_intent')
+        self.ParsedUserMsg = namedtuple('ParsedUserMsg', 'raw_text latent_vector recognized_entities classified_intent missing_entities state')
 
     def __len__(self):
         return len(self.user_msgs)
@@ -18,28 +19,25 @@ class ConversationHistory:
         try:
             output_str += '\nBot:\t' + self.bot_msgs[0]
             for i in range(len(self)):
-                output_str += f'\nUser:\t {self.user_msgs[i].raw_text} (intent - {self.user_msgs[i].classified_intent}, entities - {self.get_entities_as_string(i)})'
+                output_str += f'\nUser:\t {self.user_msgs[i].raw_text} (state - {self.user_msgs[i].state}, intent - {self.user_msgs[i].classified_intent}, ' \
+                              f'entities - {self.user_msgs[i].recognized_entities}, missing entities - {self.user_msgs[i].missing_entities})'
                 output_str += '\nBot:\t' + self.bot_msgs[i + 1]
         except IndexError:
             pass
         output_str += '\n--- End of Conversation ---'
         return output_str
 
-    def add_parsed_user_msg(self, raw_text, latent_vector, recognized_entities, classified_intent):
-        self.user_msgs.append(
-            self.ParsedUserMsg(
-                raw_text,  # str, directly from user
-                latent_vector,  # numpy array, see interpreter.BaaS.encode()
-                recognized_entities,  # dictionary, see interpreter.get_recognized_entities()
-                classified_intent  # string from cfg.valid_intents or cfg.valid_follow_up_intents
-            )
-        )
-
     def add_bot_msg(self, raw_text):
         self.bot_msgs.append(raw_text)
 
     def get_latest_msg(self):
         return self.user_msgs[-1]
+
+    def get_latest_base_intent(self):
+        all_intents = [user_msg.classified_intent for user_msg in self.user_msgs]
+        for intent in reversed(all_intents):
+            if isinstance(intent, IntentBase):
+                return intent
 
     def update_latest_recognized_entities(self, entity_letter, additional_entity_text):
         self.user_msgs[-1].recognized_entities[entity_letter].append(additional_entity_text)
@@ -70,16 +68,3 @@ class ConversationHistory:
         history = history[-(2 * (n + 1)):]
 
         return history
-
-    def get_entities_as_string(self, index):
-        recognized_entities = self.user_msgs[index].recognized_entities
-        output_str = ''
-        for entity_title, recognized_entity_list in recognized_entities.items():
-            if output_str != '':
-                output_str += ' / '
-            output_str += entity_title + ': '
-            recognized_entities_str = ', '.join(str(entity) for entity in recognized_entity_list)
-
-            output_str += recognized_entities_str
-
-        return output_str
