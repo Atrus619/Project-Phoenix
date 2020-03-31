@@ -9,7 +9,7 @@ class CustomValueEnum(Enum):
     @classmethod
     def factory(cls, name):
         for enum in cls:
-            if name == enum.name:
+            if name in {enum.name, enum.value}:
                 return enum
 
     def __str__(self):
@@ -45,12 +45,11 @@ class IntentBase(CustomValueEnum):
         # Returns a dictionary with keys as EntityBase Enums and values as the number of that entity required
         entity_requirements = EntityRequirements()
         if self == IntentBase.JOB_in_LOCATION:
-            entity_requirements.add(IntentBase.J)
-            entity_requirements.add(IntentBase.L)
+            entity_requirements.add(EntityBase.J)
+            entity_requirements.add(EntityBase.L)
         elif self == IntentBase.skills_for_JOB:
-            entity_requirements.add(IntentBase.J)
-        else:
-            return entity_requirements
+            entity_requirements.add(EntityBase.J)
+        return entity_requirements
 
 
 class IntentFollowUp(CustomValueEnum):

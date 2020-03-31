@@ -52,8 +52,9 @@ print(jpe.extract_travel_percentage())
 print(jpe)
 
 # List of todos!
-# TODO: Add state / intent to chatbot
-    # TODO: In progress, but convert all intent / state / entities over to enum class
+# TODO: Keep testing served chatbot
+# TODO: THEN! Begin working on logic and things for the selecting results (May be able to just pass links directly in the original response instead of training a classifier to respond here)
+
 # TODO: Clean up decision logic
 # TODO: Add more intent classifiers
 # TODO: Clean up chatbot page
@@ -63,6 +64,7 @@ print(jpe)
 # TODO: Containerize application?
 # TODO: Single file to run app
 
+# TODO: Allow user to cancel request while in progress to perform a different query
 # TODO: May want to split state for seeking additional information into two (initially seeking new information and seeking information for the second + time). This will cut down on redundancy in the convo.
 # TODO: Seems to get stuck if not already in vpn mode???
 # TODO: Retain postings with salary information, and sort in order from highest to lowest (can show to user as a feature)

@@ -1,6 +1,6 @@
 import socketio
-from src.classes.ConversationHistory import ConversationHistory
 import time
+from src.classes.Enums import StateBase, IntentBase, IntentFollowUp, RecognizedEntities, EntityRequirements
 
 
 def SIO(chatbot, address):
@@ -30,39 +30,35 @@ def SIO(chatbot, address):
         sio.emit('bot message', opening_msg)
 
     @sio.on('user message')
-    def on_user_message(raw_text):
-        print(f'Detected user message: {raw_text}')
-        if SIO.chatbot.policy.visualizer.is_task_in_progress():
-            sio.emit('bot message', 'I apologize, I am currently handling your previous request. Please ask me again after this completes.')
-        elif not SIO.chatbot.policy.is_seeking_additional_info():
-            SIO.latest_parsed_user_msg = SIO.chatbot.interpreter.parse_user_msg(raw_text=raw_text)
-            reply = SIO.chatbot.update_history_and_generate_reply(parsed_user_msg=SIO.latest_parsed_user_msg)
-            sio.emit('bot message', reply)
+    def on_user_message(raw_user_text):
+        print(f'Detected user message: {raw_user_text}')
+        reply = SIO.chatbot.get_reply(raw_user_text)
+        update_state_if_processing()
+        sio.emit('bot message', reply)
 
-            if 'Please wait a moment while I collect the relevant information for you.' in reply:
-                sio.start_background_task(wait_for_task_completion, SIO.chatbot.policy.visualizer)
+        if SIO.chatbot.exit_conversation():
+            return
 
-            if SIO.chatbot.exit_conversation():
-                return
-            if SIO.chatbot.policy.is_seeking_additional_info():  # Newly seeking additional information
-                SIO.additional_info_conv_history = ConversationHistory()
-        else:  # is seeking additional info
-            # Check if additional information was sought and continue asking until all information determined for request
-            reply = SIO.chatbot.update_history_and_get_more_information(input_msg=raw_text, original_parsed_user_msg=SIO.latest_parsed_user_msg,
-                                                                        additional_info_conv_history=SIO.additional_info_conv_history)
-            sio.emit('bot message', reply)
+    def update_state_if_processing():
+        if SIO.chatbot.policy.visualizer.task:
+            SIO.chatbot.state = StateBase.processing
+            sio.start_background_task(wait_for_task_completion, SIO.chatbot.policy.visualizer, SIO.chatbot.conversation_history.get_latest_base_intent())
+            return
 
-    def wait_for_task_completion(visualizer, interval=5):
+    def wait_for_task_completion(visualizer, latest_intent, interval=5):
+        # Ensure this is kept parallel with the similarly named method in ChatBot.py
         while True:
             if visualizer.is_task_complete():
                 break
             time.sleep(interval)
 
-        reply = visualizer.get_reply()
+        reply = visualizer.get_reply(intent=latest_intent)
         sio.emit('bot message', reply)
+        SIO.chatbot.policy.visualizer.task = None
+        SIO.chatbot.state = StateBase.selecting_results
         return
 
+    # Execute
     sio.connect(address)
     sio.wait()
     return
-

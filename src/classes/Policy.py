@@ -2,14 +2,13 @@ import time
 from config import Config as cfg
 import numpy as np
 from src.classes.Visualizer import Visualizer
-from src.classes.Enums import StateBase, IntentBase, IntentFollowUp, RecognizedEntities, EntityRequirements
+from src.classes.Enums import StateBase, IntentBase, IntentFollowUp, RecognizedEntities, EntityRequirements, EntityBase
 
 
 class Policy:
     """
     Defines how the chatbot responds to the user, calling appropriate external functionality as needed
     """
-
     def __init__(self, small_talk, delay_func=lambda: time.sleep(np.clip(np.random.normal(2, 1), 0, 4)), small_talk_personality=None):
         self.small_talk = small_talk
 
@@ -24,7 +23,11 @@ class Policy:
     def get_reply(self, conversation_history):
         _, _, recognized_entities, intent, missing_entities, state = conversation_history.get_latest_msg()
 
-        if state == StateBase.seeking_additional_info:
+        if state == StateBase.processing:
+            return self.get_reply_processing()
+        elif state == StateBase.selecting_results:
+            raise NotImplementedError
+        elif state == StateBase.seeking_additional_info:
             reply = self.get_reply_seeking_additional_info(intent, recognized_entities, missing_entities)
         elif isinstance(intent, IntentBase):
             reply = self.get_reply_base_intent(intent, conversation_history, recognized_entities)
@@ -35,6 +38,10 @@ class Policy:
 
         self.delay_func()
         return reply
+
+    @staticmethod
+    def get_reply_processing():
+        return 'I apologize, I am currently handling your previous request. Please ping me again after I am finished and present you with results.'
 
     def get_reply_base_intent(self, intent, conversation_history, recognized_entities):
         if intent == IntentBase.end_of_conversation:
@@ -52,7 +59,8 @@ class Policy:
         if intent == IntentFollowUp.reject:
             return self.get_reply_follow_up_intent_rejected()
         elif intent == IntentFollowUp.accept:
-            return self.get_reply_follow_up_intent_accepted(latest_intent=conversation_history.get_latest_base_intent(), conversation_history=conversation_history, recognized_entities=conversation_history.get_latest_msg.recognized_entities)
+            return self.get_reply_follow_up_intent_accepted(latest_intent=conversation_history.get_latest_base_intent(), conversation_history=conversation_history,
+                                                            recognized_entities=conversation_history.get_latest_msg.recognized_entities)
         else:
             raise Exception('Received an unexpected follow up intent')
 
@@ -95,26 +103,18 @@ class Policy:
 
     def get_reply_job_in_location(self, recognized_entities):
         assert recognized_entities is not None
-        if (len(recognized_entities["J"]) > 0) and (len(recognized_entities["L"]) > 0):  # Only return information about the first one asked for now.
-            job, location = recognized_entities["J"][0], recognized_entities["L"][0]
-            reply = f'You are asking for information about {job} jobs in {location}. ' \
-                    f'Please wait a moment while I collect the relevant information for you.'
-            self.visualizer.process_job_in_location(job=job, location=location)
-            return reply
+        job, location = recognized_entities[EntityBase.J][0], recognized_entities[EntityBase.L][0]  # Only return information about the first of each identified for now
+        reply = f'You are asking for information about {job} jobs in {location}. ' \
+                f'Please wait a moment while I collect the relevant information for you.'
+        self.visualizer.process_job_in_location(job=job, location=location)
+        return reply
 
-        intent_descr = 'a specific job in a specific location'
-        if len(recognized_entities["J"]) == 0:  # Simplistic approach for now, only handle one missing entity at a time.
-            return self.seek_additional_info(intent_descr=intent_descr, missing_entity="J", recognized_entities=recognized_entities)
-        else:
-            return self.seek_additional_info(intent_descr=intent_descr, missing_entity="L", recognized_entities=recognized_entities)
-
+    # TODO: Add processor function to this guy
     def get_reply_skills_for_job(self, recognized_entities):
         assert recognized_entities is not None
-        if len(recognized_entities["J"]) > 0:  # Only return information about the first one asked for now. TODO: Handle multiple requests simultaneously?
-            reply = f'You are asking about skills for a {recognized_entities["J"][0]}.'
-            return reply
-        else:
-            return self.seek_additional_info(intent_descr='skill requirements for a specific job', missing_entity="J", recognized_entities=recognized_entities)
+        job = recognized_entities[EntityBase.J][0]
+        reply = f'You are asking about skills for a {job}.'
+        return reply
 
     @staticmethod
     def get_reply_follow_up_intent_rejected():
@@ -122,38 +122,6 @@ class Policy:
 
     def get_reply_follow_up_intent_accepted(self, latest_intent, conversation_history, recognized_entities):
         return self.get_reply_base_intent(latest_intent, conversation_history, recognized_entities)
-
-    # TODO: Can likely delete once tested
-    def seek_additional_info(self, intent_descr: str, missing_entity: str, recognized_entities: dict):
-        assert missing_entity in cfg.entities, 'Invalid entity passed to seek_additional_info method'
-        missing_entities_str = cfg.entities[missing_entity]
-
-        recognized_entities_list = []
-        for recognized_entity_code, list_of_specific_recognized_entities in recognized_entities.items():
-            for specific_recognized_entity in list_of_specific_recognized_entities:
-                recognized_entities_list.append(cfg.entities[recognized_entity_code] + ': ' + specific_recognized_entity)
-        recognized_entities_str = ', '.join(recognized_entities_list)
-
-        reply = f'I apologize, I am not perfect. I identified you are trying to get information about {intent_descr}.'
-
-        if len(recognized_entities_list) > 0:
-            reply += f' I believe that you are looking for the following:\n{recognized_entities_str}.'
-
-        reply += f'\n\nIt appears I am unable to identify a crucial missing piece of information. Could you tell me specifically which {missing_entities_str} you are interested ' \
-                 f'in getting information about? If I have grossly misunderstood your request, I apologize again. Feel free to let me know if this is the case and we can try ' \
-                 f'again from the beginning.'
-
-        self.set_missing_entity(missing_entity=missing_entity)
-        return reply
-
-    def set_missing_entity(self, missing_entity):
-        self.missing_entity = missing_entity
-
-    def reset_missing_entity(self):
-        self.missing_entity = None
-
-    def is_seeking_additional_info(self):
-        return self.missing_entity is not None
 
     @staticmethod
     def preprocess_small_talk_personality(small_talk_personality):

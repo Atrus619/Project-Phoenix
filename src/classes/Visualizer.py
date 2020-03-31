@@ -2,6 +2,8 @@ import pickle as pkl
 from redis import Redis
 import rq
 from config import Config as cfg
+import time
+from src.classes.Enums import StateBase, IntentBase, IntentFollowUp, RecognizedEntities, EntityRequirements
 
 
 class Visualizer:
@@ -13,14 +15,16 @@ class Visualizer:
     def process_job_in_location(self, job, location):
         self.task = self._task_queue.enqueue('src.visualization.visualize.run_extractions',
                                              args=(job, location))
-                                             # job_timeout=-1)
+        # job_timeout=-1)
 
         return
 
-    def get_reply(self):
+    def get_reply(self, intent):
         assert self.is_task_complete
-        with open('app/static/imgs/description.pkl', 'rb') as f:
-            reply = pkl.load(f)
+        if intent == IntentBase.JOB_in_LOCATION:
+            reply = 'I have finished processing the results for your inquiry...TODO'
+        else:
+            raise NotImplementedError
         return reply
 
     def is_task_complete(self):

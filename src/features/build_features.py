@@ -3,8 +3,6 @@ import re
 import os
 import pandas as pd
 
-# TODO: write a function that extracts job descriptions
-
 
 def update_skills():
     """ Appends all .csv files in skills directory to the constants skills dict and returns said dict """
@@ -17,9 +15,6 @@ def update_skills():
     return final_skill_dict
 
 
-
-
-# TODO: revisit to make more complicated
 def get_skills(descr):
     matched_skills = []
     for skill in cs.skills:

@@ -117,6 +117,11 @@ class Extractions:
                 # TODO: Possibly save on time here by doing more preprocessing for BaaS?
                 master_ngrams_encoded = BaaS.encode(current_ngrams_list)
 
+            # Wrote this as a response to a weird bug found earlier - "ValueError: Found array with 0 sample(s) (shape=(0, 1024)) for cosine_similarity"
+            if not len(master_ngrams_encoded):
+                logger.info('master_ngrams_encoded has len 0 - skipping to next page.')
+                continue
+
             # Redistribute batched collected encodings to jpes
             logger.info('Redistributing batched encodings to jpes.')
             for index, jpe in enumerate(current_jpes):
