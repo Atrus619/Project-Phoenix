@@ -52,14 +52,17 @@ print(jpe.extract_travel_percentage())
 print(jpe)
 
 # List of todos!
-# TODO: Keep testing served chatbot
-# TODO: THEN! Begin working on logic and things for the selecting results (May be able to just pass links directly in the original response instead of training a classifier to respond here)
-
-# TODO: Clean up decision logic
-# TODO: Add more intent classifiers
-# TODO: Clean up chatbot page
-# TODO: Add functionality to send links from chatbot to download certain objects
-# TODO: Build out these objects sent back
+# TODO: Begin working on logic and things for the selecting results (May be able to just pass links directly in the original response instead of training a classifier to respond here)
+"""
+Plan for serving up content:
+1. Look up node express routing CHECK
+2. Build out process for node to give access to stored objects via get request CHECK
+3. Chatbot sends message with links encoded (build function / class for this) CHECK
+4. Server decodes message and turns links into actual links on the page CHECK / NEW ITEM TO DO
+5. IFRAME to open up links inside DOM
+5. Make sure I have a firm grip on what exactly the user will be getting back
+6. Clean up page to be more aesthetically pleasing / make sense
+"""
 
 # TODO: Containerize application?
 # TODO: Single file to run app

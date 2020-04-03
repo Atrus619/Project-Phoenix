@@ -10,6 +10,7 @@ from src.pipeline.utils import setup_extractions_logger
 import logging
 import threading
 import pickle as pkl
+import os
 
 
 setup_extractions_logger(__name__)
@@ -41,17 +42,17 @@ def create_wordcloud(scraped_jobs, attribute='descr', path='app/static/imgs/samp
     return
 
 
-def run_extractions(job, location):
+def run_extractions(job, location, user_id):
     logger.info('Running extractions...')
     extractions = Extractions(required_years_experience=5, required_degree=5, travel_percentage=1, salary=5)
     extractions.gather(job, location)
     logger.info('Extractions complete.')
 
-    # TODO: Add specific locations rather than one generic default location
+    output_dir = os.path.join('app', 'static', user_id)
     threads = list()
-    threads.append(threading.Thread(target=create_wordcloud, args=(extractions.scraped_jobs_parsed, 'descr', 'app/static/imgs/sample_wordcloud.png')))
-    threads.append(threading.Thread(target=build_heatmap, args=(extractions.scraped_jobs_parsed, location, 'app/static/imgs/heatmap.html')))
-    threads.append(threading.Thread(target=describe_extractions, args=(extractions, 'app/static/imgs/description.pkl')))
+    threads.append(threading.Thread(target=create_wordcloud, args=(extractions.scraped_jobs_parsed, 'descr', os.path.join(output_dir, 'wordcloud.png'))))
+    threads.append(threading.Thread(target=build_heatmap, args=(extractions.scraped_jobs_parsed, location, os.path.join(output_dir, 'heatmap.html'))))
+    threads.append(threading.Thread(target=describe_extractions, args=(extractions, os.path.join(output_dir, 'description.pkl'))))
     # TODO: Add master table output
 
     for thread in threads:

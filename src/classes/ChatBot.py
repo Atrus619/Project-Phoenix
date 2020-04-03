@@ -1,3 +1,6 @@
+import os
+import string
+import random
 from src.classes.ConversationHistory import ConversationHistory
 from config import Config as cfg
 from src.classes.Enums import StateBase, IntentBase, IntentFollowUp, RecognizedEntities, EntityRequirements
@@ -28,6 +31,7 @@ class ChatBot:
 
     def console_interact(self):
         opening_msg = self.update_history_and_generate_opening_msg()
+        self.set_new_user_id()
         print(opening_msg)
 
         while True:
@@ -37,6 +41,16 @@ class ChatBot:
             print(reply)
             if self.exit_conversation():
                 return
+
+    def set_new_user_id(self):
+        current_ids = os.listdir(os.path.join('app', 'static'))
+        while True:
+            new_id = ''.join(random.choices(string.ascii_uppercase + string.digits, k=10))
+            if new_id not in current_ids:
+                break
+        os.mkdir(os.path.join('app', 'static', new_id))
+        self.policy.visualizer.user_id = new_id
+        return
 
     def _parse_user_msg(self, raw_text):
         raw_text = self.interpreter.preprocess_user_raw_text(raw_text=raw_text)

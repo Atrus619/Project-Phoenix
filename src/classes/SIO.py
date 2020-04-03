@@ -26,6 +26,7 @@ def SIO(chatbot, address):
     def on_user_connect(data):
         print('Detected user connecting.')
         SIO.chatbot.wipe_history()
+        SIO.chatbot.set_new_user_id()
         opening_msg = SIO.chatbot.update_history_and_generate_opening_msg()
         sio.emit('bot message', opening_msg)
 

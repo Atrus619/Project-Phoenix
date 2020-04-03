@@ -11,6 +11,22 @@ app.get('/', function(req, res){
   res.sendFile(__dirname + '/index.html');
 });
 
+// Wordcloud
+app.get('/static/([A-Z0-9]){10}/wordcloud.png', function(req, res){
+  res.download('/static/([A-Z0-9]){10}/wordcloud.png')
+});
+
+// Heatmap
+app.get('/static/([A-Z0-9]){10}/heatmap.html', function(req, res){
+  res.download('/static/([A-Z0-9]){10}/heatmap.html')
+});
+
+// Description
+// TODO: This one DEFINITELY needs to get changed
+app.get('/static/([A-Z0-9]){10}/description.pkl', function(req, res){
+  res.download('/static/([A-Z0-9]){10}/description.pkl')
+});
+
 app.use(express.static(path.join(__dirname, 'static')))
 
 user_io.on('connection', function(socket){
