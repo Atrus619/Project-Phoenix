@@ -59,9 +59,13 @@ Plan for serving up content:
 2. Build out process for node to give access to stored objects via get request CHECK
 3. Chatbot sends message with links encoded (build function / class for this) CHECK
 4. Server decodes message and turns links into actual links on the page CHECK / NEW ITEM TO DO
-5. IFRAME to open up links inside DOM
-5. Make sure I have a firm grip on what exactly the user will be getting back
-6. Clean up page to be more aesthetically pleasing / make sense
+5. IFRAME to open up links inside DOM CHECK
+6. Make sure I have a firm grip on what exactly the user will be getting back
+    Turn all outputs into html format!
+    Wordcloud
+    Table output
+    More???
+7. Clean up page to be more aesthetically pleasing / make sense CHECK
 """
 
 # TODO: Containerize application?

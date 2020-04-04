@@ -25,9 +25,9 @@ class Visualizer:
         assert self.is_task_complete
         if intent == IntentBase.JOB_in_LOCATION:
             reply = f'I have finished processing the results for your inquiry.\n' \
-                    f'You can view a heatmap of the discovered jobs and their locations {self.get_url_text(displayed_text="here", file_name="heatmap.html")}, ' \
-                    f'you can download a wordcloud {self.get_url_text(displayed_text="here", file_name="wordcloud.png")}, ' \
-                    f'or you can download a flat file containing detailed information from my discoveries {self.get_url_text(displayed_text="here", file_name="description.pkl")}.'
+                    f'You can view a heatmap of the discovered jobs and their locations {self.get_iframe_text(displayed_text="here", file_name="heatmap.html")}, ' \
+                    f'you can download a wordcloud {self.get_iframe_text(displayed_text="here", file_name="wordcloud.png")}, ' \
+                    f'or you can download a flat file containing detailed information from my discoveries {self.get_iframe_text(displayed_text="here", file_name="description.pkl")}.'
         else:
             raise NotImplementedError
         return reply
@@ -47,5 +47,5 @@ class Visualizer:
     def is_task_in_progress(self):
         return self.is_task_started() and not self.is_task_complete()
 
-    def get_url_text(self, displayed_text, file_name):
-        return f'<a href="{os.path.join(self.user_id, file_name)}" download>{displayed_text}</a>'
+    def get_iframe_text(self, displayed_text, file_name):
+        return f'<a onclick=loadContent("./{os.path.join(self.user_id, file_name)}") href="javascript:void(0);">{displayed_text}</a>'

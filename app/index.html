@@ -13,7 +13,6 @@
   <body>
     <div class="leftcolumn">
       <ul id="messages"></ul>
-
       <form id="chat_form" action="">
         <input type='text' id="m" autocomplete="off"/>
         <div class='flex'>
@@ -21,14 +20,12 @@
           <input type='button' id='send_message' value='Send' onclick='sendMessage();'/>
         </div>
       </form>
+
     </div>
 
     <div class="rightcolumn">
-      <div class="viz_area">
-        <h2>Placeholder for future images</h2>
-        <div class="fakeimg" style="height:100px;">Image</div>
-        <p>Placeholder for future images</p>
-      </div>
+      <iframe id="viz" src=""></iframe>
+    </div>
   </body>
 </html>
 
