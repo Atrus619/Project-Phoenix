@@ -48,4 +48,4 @@ class Visualizer:
         return self.is_task_started() and not self.is_task_complete()
 
     def get_iframe_text(self, displayed_text, file_name):
-        return f'<a onclick=loadContent("./{os.path.join(self.user_id, file_name)}") href="javascript:void(0);">{displayed_text}</a>'
+        return f'<a onclick=loadContent("./users/{os.path.join(self.user_id, file_name)}") href="javascript:void(0);">{displayed_text}</a>'

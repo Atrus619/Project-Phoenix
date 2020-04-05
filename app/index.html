@@ -11,9 +11,16 @@
   </head>
 
   <body>
-    <div class="leftcolumn">
+    <div class="header">
+      <h1 id="title">
+        <img src="./imgs/logo.png" class="logo" alt="logo" align="left"></img>
+        Project-Phoenix
+        <img src="./imgs/logo.png" class="logo" alt="logo" align="right"></img>
+      </h1>
+    </div>
+    <div class="leftColumn">
       <ul id="messages"></ul>
-      <form id="chat_form" action="">
+      <form id="chatForm" action="">
         <input type='text' id="m" autocomplete="off"/>
         <div class='flex'>
           <input type='button' id='record_audio' value='Record Audio' onclick='startRecording();'/>
@@ -23,7 +30,7 @@
 
     </div>
 
-    <div class="rightcolumn">
+    <div class="rightColumn">
       <iframe id="viz" src=""></iframe>
     </div>
   </body>
