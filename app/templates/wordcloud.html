@@ -1,1 +1,37 @@
-<img src="../3FF0EGADBK/wordcloud.png" alt="wordcloud">
+<!DOCTYPE html>
+<html>
+<head>
+  <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
+  <script src="../../js/wordcloud.js"></script>
+  <style>
+  html, body {
+    height: 100%;
+    width: 100%;
+    margin: 0;
+    display: block;
+    position: absolute;
+  }
+  .imageholder{
+    height: 100%;
+  }
+  .caption{
+    font-family: Helvetica,sans-serif;
+    font-size: 1.5em;
+    background: rgba(0,0,0,0.5);
+    color: #fff;
+    padding: 1em 2em;
+    text-align: center;
+  }
+  img {
+    height: 100%;
+    width: 100%;
+  }
+  </style>
+</head>
+<body>
+  <div class='imageholder'>
+    <div id="caption" class="caption">{{ wordcloud_title }}</div>
+    <img id="wordcloud" src="{{ wordcloud_path }}" alt="wordcloud">
+  </div>
+</body>
+</html>

@@ -24,10 +24,10 @@ class ChatBot:
         parsed_user_msg = self._parse_user_msg(raw_text=raw_user_text)  # Interpreter
         self.state = self._get_next_state(latest_intent=parsed_user_msg[3])
         self._add_parsed_user_msg(*parsed_user_msg)  # ConversationHistory
-        reply = self.policy.get_reply(self.conversation_history)  # Policy
-        self._add_bot_msg(reply)
-
-        return reply
+        reply_generator = self.policy.get_reply(self.conversation_history)  # Policy
+        for reply in reply_generator:
+            self._add_bot_msg(reply)
+            yield reply
 
     def console_interact(self):
         opening_msg = self.update_history_and_generate_opening_msg()
@@ -36,9 +36,9 @@ class ChatBot:
 
         while True:
             raw_text = self.seek_input_from_user()
-            reply = self.get_reply(raw_text)
+            for reply in self.get_reply(raw_text):
+                print(reply)
             self._update_state_if_processing()
-            print(reply)
             if self.exit_conversation():
                 return
 
@@ -48,7 +48,6 @@ class ChatBot:
             new_id = ''.join(random.choices(string.ascii_uppercase + string.digits, k=10))
             if new_id not in current_ids:
                 break
-        os.mkdir(os.path.join('app', 'static', new_id))
         self.policy.visualizer.user_id = new_id
         return
 
@@ -76,8 +75,8 @@ class ChatBot:
         self.conversation_history.add_parsed_user_msg(raw_text, latent_vector, recognized_entities, classified_intent, missing_entities, state)
         return
 
-    def _add_bot_msg(self, reply):
-        self.conversation_history.add_bot_msg(raw_text=reply)
+    def _add_bot_msg(self, txt):
+        self.conversation_history.add_bot_msg(raw_text=txt)
 
     def _get_next_state(self, latest_intent):
         if self.state == StateBase.processing:  # Do not update state regardless of user request if currently processing
@@ -130,12 +129,17 @@ class ChatBot:
         return raw_text
 
     def update_history_and_generate_opening_msg(self):
-        opening_msg = self.policy.get_opening_msg()
-        self.conversation_history.add_bot_msg(raw_text=opening_msg)
-        return opening_msg
+        """Returns a generator"""
+        opening_msgs = self.policy.get_opening_msg()
+        for msg in opening_msgs:
+            self._add_bot_msg(txt=msg)
+            yield msg
+        return
 
     def wipe_history(self):
         self.conversation_history = ConversationHistory()
+        self.state = StateBase.base
+        return
 
     def exit_conversation(self):
         return self.state == StateBase.conversation_complete

@@ -24,13 +24,17 @@ class Visualizer:
     def get_reply(self, intent):
         assert self.is_task_complete
         if intent == IntentBase.JOB_in_LOCATION:
-            reply = f'I have finished processing the results for your inquiry.\n' \
-                    f'You can view a heatmap of the discovered jobs and their locations {self.get_iframe_text(displayed_text="here", file_name="heatmap.html")}, ' \
-                    f'you can download a wordcloud {self.get_iframe_text(displayed_text="here", file_name="wordcloud.png")}, ' \
-                    f'or you can download a flat file containing detailed information from my discoveries {self.get_iframe_text(displayed_text="here", file_name="description.pkl")}.'
+            yield f'I have finished processing the results for your inquiry.'
+            with open(os.path.join(cfg.user_output_folder, self.user_id, 'description.txt'), 'r') as f:
+                description = f.read()
+            for line in description.split('\n'):
+                yield line
+            yield f'You can view a heatmap of the discovered jobs and their locations {self.get_iframe_text(displayed_text="here", file_name="heatmap.html")}.'
+            yield f'You can also view a wordcloud {self.get_iframe_text(displayed_text="here", file_name="wordcloud.html")}.'
+            yield f'Lastly, you can view a table containing detailed information from my discoveries {self.get_iframe_text(displayed_text="here", file_name="description.txt")}.'
         else:
             raise NotImplementedError
-        return reply
+        return
 
     def is_task_complete(self):
         if self.task:

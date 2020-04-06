@@ -89,24 +89,6 @@ class Config:
     intent_training_num_cv = 5
     intent_follow_up_training_num_cv = 3
 
-    valid_intents = {
-        'small_talk': 'Smalltalk',
-        'end_of_conversation': 'Conclusions',
-        '[job]_in_[location]': '[JOB]_in_[LOCATION]',
-        'skills_for_[job]': 'skills_for_[JOB]'
-    }
-
-    valid_follow_up_intents = {
-        'Rejection',
-        'Acceptance'
-    }
-
-    # Entities
-    entities = {
-        'J': 'job',
-        'L': 'location'
-    }
-
     # Smalltalk
     interact_config = {
         'max_history': 2,
@@ -121,3 +103,6 @@ class Config:
 
     # Redis
     REDIS_URL = os.environ.get('REDIS_URL') or 'redis://'
+
+    templates_folder = 'app/templates'
+    user_output_folder = 'app/static/users'

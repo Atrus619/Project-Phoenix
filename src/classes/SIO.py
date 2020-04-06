@@ -27,15 +27,16 @@ def SIO(chatbot, address):
         print('Detected user connecting.')
         SIO.chatbot.wipe_history()
         SIO.chatbot.set_new_user_id()
-        opening_msg = SIO.chatbot.update_history_and_generate_opening_msg()
-        sio.emit('bot message', opening_msg)
+        opening_msgs = SIO.chatbot.update_history_and_generate_opening_msg()
+        for msg in opening_msgs:
+            sio.emit('bot message', msg)
 
     @sio.on('user message')
     def on_user_message(raw_user_text):
         print(f'Detected user message: {raw_user_text}')
-        reply = SIO.chatbot.get_reply(raw_user_text)
+        for reply in SIO.chatbot.get_reply(raw_user_text):
+            sio.emit('bot message', reply)
         update_state_if_processing()
-        sio.emit('bot message', reply)
 
         if SIO.chatbot.exit_conversation():
             return
@@ -53,8 +54,8 @@ def SIO(chatbot, address):
                 break
             time.sleep(interval)
 
-        reply = visualizer.get_reply(intent=latest_intent)
-        sio.emit('bot message', reply)
+        for reply in visualizer.get_reply(intent=latest_intent):
+            sio.emit('bot message', reply)
         SIO.chatbot.policy.visualizer.task = None
         SIO.chatbot.state = StateBase.selecting_results
         return

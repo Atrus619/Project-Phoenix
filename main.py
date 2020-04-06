@@ -62,7 +62,6 @@ Plan for serving up content:
 5. IFRAME to open up links inside DOM CHECK
 6. Make sure I have a firm grip on what exactly the user will be getting back
 NEXT TODO:
-    Wordcloud --> Template from python to generate html
     Other formats like table! make pretty and then make template for python
 7. Clean up page to be more aesthetically pleasing / make sense CHECK
 8. Add a header to website?

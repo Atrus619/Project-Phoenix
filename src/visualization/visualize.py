@@ -11,19 +11,23 @@ import logging
 import threading
 import pickle as pkl
 import os
+from jinja2 import Environment, FileSystemLoader
+import string
 
 
 setup_extractions_logger(__name__)
 logger = logging.getLogger(__name__)
 
 
-def create_wordcloud(scraped_jobs, attribute='descr', path='app/static/imgs/sample_wordcloud.png'):
+def create_wordcloud(scraped_jobs, attribute, path, job, location):
     """
     Generates a wordcloud based on a list of
     :param scraped_jobs: ScrapedJobs object
     :param attribute: One of 'descr' or 'title'
     :param path: output path to save file to
-    :return: wordcloud object
+    :param job: job requested by user
+    :param location: location requested by user
+    :return: None, but saves a wordcloud.png and a wordcloud.html to the static/user_id folder
     """
     assert isinstance(scraped_jobs, ScrapedJobs)
     assert attribute in ('descr', 'job_title')
@@ -37,8 +41,21 @@ def create_wordcloud(scraped_jobs, attribute='descr', path='app/static/imgs/samp
         full_str = ' '.join([scraped_job.job_title for scraped_job in scraped_jobs])
         stopwords.update([])
 
+    # Create and export wordcloud png
     WordCloud(stopwords=stopwords).generate(full_str).to_file(path)
-    logger.info(f'Wordcloud successfully created at {path}.')
+    logger.info(f'Wordcloud successfully created at {path}')
+
+    # Create and export wordcloud html
+    env = Environment(loader=FileSystemLoader(cfg.templates_folder))
+    template = env.get_template('wordcloud.html')
+    processed_template = template.render(wordcloud_title=f'Wordcloud for {string.capwords(job)} in {string.capwords(location)}',
+                                         wordcloud_path=os.path.basename(path))
+
+    # Change file extension from .png to .html
+    with open(os.path.splitext(path)[0] + '.html', 'w') as f:
+        f.write(processed_template)
+    logger.info('Wordcloud html template successfully created')
+
     return
 
 
@@ -48,11 +65,13 @@ def run_extractions(job, location, user_id):
     extractions.gather(job, location)
     logger.info('Extractions complete.')
 
-    output_dir = os.path.join('app', 'static', user_id)
+    output_dir = os.path.join(cfg.user_output_folder, user_id)
+    os.makedirs(output_dir, exist_ok=True)
+
     threads = list()
-    threads.append(threading.Thread(target=create_wordcloud, args=(extractions.scraped_jobs_parsed, 'descr', os.path.join(output_dir, 'wordcloud.png'))))
+    threads.append(threading.Thread(target=create_wordcloud, args=(extractions.scraped_jobs_parsed, 'descr', os.path.join(output_dir, 'wordcloud.png'), job, location)))
     threads.append(threading.Thread(target=build_heatmap, args=(extractions.scraped_jobs_parsed, location, os.path.join(output_dir, 'heatmap.html'))))
-    threads.append(threading.Thread(target=describe_extractions, args=(extractions, os.path.join(output_dir, 'description.pkl'))))
+    threads.append(threading.Thread(target=describe_extractions, args=(extractions, os.path.join(output_dir, 'description.txt'))))
     # TODO: Add master table output
 
     for thread in threads:
@@ -64,7 +83,7 @@ def run_extractions(job, location, user_id):
     return
 
 
-def describe_extractions(extractions, path='app/static/imgs/description.pkl'):
+def describe_extractions(extractions, path='app/static/imgs/description.txt'):
     """Returns a string describing the extractions for output to chatbot"""
     logger.info('Describing extractions...')
 
@@ -83,14 +102,14 @@ def describe_extractions(extractions, path='app/static/imgs/description.pkl'):
                   f'Of the job postings where I was able to find each relevant piece of information, I found the following:\n' \
                   f'Years of experience: {avg_years_exp:.1f}\n' \
                   f'Salary: ${avg_salary:,.0f} /  year\n' \
-                  f'Travel Percentage (Note: Only includes those that reported this): {avg_travel_percentage:.1f}%\n' \
+                  f'Travel Percentage (Note: only includes those that reported this): {avg_travel_percentage:.1f}%\n' \
                   f'Proportion that listed the following degrees as a requirement (a single posting can include multiple):\n' \
                   f'Bachelors degree (BS): {prop_bs*100:.1f}%\n' \
                   f'Masters degree (MS): {prop_ms*100:.1f}%\n' \
-                  f'PhD: {prop_phd*100:.1f}%'
+                  f'PhD: {prop_phd*100:.1f}%\n'
 
-    with open(path, 'wb') as f:
-        pkl.dump(description, f)
+    with open(path, 'w') as f:
+        f.write(description)
 
     logger.info(f'Extractions successfully created at {path}.')
     return

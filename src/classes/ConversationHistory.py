@@ -66,7 +66,6 @@ class ConversationHistory:
 
     def get_list_of_conversation_latest_n_exchanges(self, n):
         history = []
-
         bot_msgs = deepcopy(self.bot_msgs)
         user_msgs = deepcopy(self.user_msgs)
         msg_order = deepcopy(self.msg_order)
