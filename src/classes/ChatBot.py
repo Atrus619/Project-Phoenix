@@ -30,9 +30,10 @@ class ChatBot:
             yield reply
 
     def console_interact(self):
-        opening_msg = self.update_history_and_generate_opening_msg()
+        opening_msgs = self.update_history_and_generate_opening_msg()
         self.set_new_user_id()
-        print(opening_msg)
+        for msg in opening_msgs:
+            print(msg)
 
         while True:
             raw_text = self.seek_input_from_user()
