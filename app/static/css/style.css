@@ -1,0 +1,113 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  font: 13px Helvetica, Arial;
+  height: 100%;
+  margin: 0;
+}
+
+/* Header / logo */
+.header {
+  font-family: Helvetica,sans-serif;
+  font-size: 1.5em;
+  background: rgba(2,1,1,0.82);
+  color: #fff;
+  padding: 0.5em 2em;
+  text-align: center;
+}
+
+#title{
+
+}
+
+.logo {
+  object-fit: contain;
+}
+
+/* Posted messages styling */
+#messages {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+  text-align: left;
+}
+#messages li {
+  padding: 5px 10px;
+}
+
+.botMsg{
+  background-color: #eee;
+}
+
+/* Create two unequal columns that float next to each other */
+.leftColumn {
+  float: left;
+  width: 25%;
+  display: block;
+}
+
+.rightColumn {
+  float: right;
+  width: 75%;
+  height: 100%;
+  background-color: #F5F5F5;
+  padding-left: 0px;
+}
+
+iframe {
+  width: 100%;
+  height: 100%;
+  border: antiquewhite;
+}
+
+/* Form at bottom of screen styling */
+form {
+  background: #000;
+  padding: 3px;
+  position: fixed;
+  bottom: 0;
+  display: inline-block;
+  margin-left: auto;
+  margin-right: auto;
+  text-align: left;
+  width: 25%;
+  box-sizing: border-box;
+}
+form input[type="text"] {
+  border: 0;
+  padding-top: 10px;
+  padding-bottom: 10px;
+  padding-right: 0px;
+  padding-left: 20px;
+  margin: 0.1%;
+  margin-bottom: 3px;
+  width: 100%;
+  box-sizing: border-box;
+}
+form input[type="button"] {
+  background: rgb(130, 224, 255);
+  border: 0;
+  padding: 10px;
+  display: inline-block;
+  margin: 0.1%;
+  text-align: center;
+  width: 100%;
+}
+
+.flex {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+/* Responsive layout - when the screen is less than 800px wide, make the two columns
+stack on top of each other instead of next to each other */
+@media screen and (max-width: 800px) {
+  .leftColumn, .rightColumn, form, form input {
+    width: 100%;
+  }
+}

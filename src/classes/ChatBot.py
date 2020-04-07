@@ -44,7 +44,8 @@ class ChatBot:
                 return
 
     def set_new_user_id(self):
-        current_ids = os.listdir(os.path.join('app', 'static'))
+        os.makedirs(cfg.user_output_folder, exist_ok=True)
+        current_ids = os.listdir(cfg.user_output_folder)
         while True:
             new_id = ''.join(random.choices(string.ascii_uppercase + string.digits, k=10))
             if new_id not in current_ids:
