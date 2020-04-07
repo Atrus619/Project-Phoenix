@@ -111,7 +111,7 @@ def describe_extractions(extractions, path='app/static/imgs/description.txt'):
     with open(path, 'w') as f:
         f.write(description)
 
-    logger.info(f'Extractions successfully created at {path}.')
+    logger.info(f'Extractions successfully created at {path}')
     return
 
 
@@ -133,5 +133,5 @@ def build_heatmap(scraped_jobs, originally_searched_location, output_path='app/s
     gmap = gmplot.GoogleMapPlotter(center_lat=gmap_lat, center_lng=gmap_long, zoom=13, apikey=cfg.GCP_API_KEY)
     gmap.heatmap(latitudes, longitudes, radius=50)
     gmap.draw(output_path)
-    logger.info(f'Heatmap successfully created at {output_path}.')
+    logger.info(f'Heatmap successfully created at {output_path}')
     return

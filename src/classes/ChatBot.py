@@ -114,9 +114,10 @@ class ChatBot:
                 break
             time.sleep(interval)
 
-        reply = self.policy.visualizer.get_reply(intent=self.conversation_history.get_latest_base_intent())
-        self.conversation_history.add_bot_msg(reply)
-        print(reply)
+        replies = self.policy.visualizer.get_reply(intent=self.conversation_history.get_latest_base_intent())
+        for reply in replies:
+            self.conversation_history.add_bot_msg(reply)
+            print(reply)
         self.policy.visualizer.task = None
         self.state = StateBase.selecting_results
         return

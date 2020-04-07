@@ -23,7 +23,7 @@ def make_flow(model_name=cfg.default_model_name,
               spawn_chatbot=False,
               add_conv_detail=False,
               response_delay=False,
-              cuda=True):
+              cpu=False):
     with Flow(model_name) as flow:
         # Set up logger
         logger = utilities.logging.get_logger(cfg.chatbot_training_log_name)
@@ -48,7 +48,7 @@ def make_flow(model_name=cfg.default_model_name,
                                      upstream_tasks=[status_allow_user_update_ner])
 
         # 4. Train Intent Classifier
-        BaaS_freshly_initialized = init_BaaS(cuda=cuda)
+        BaaS_freshly_initialized = init_BaaS(cuda=not cpu)
         status_train_intent_and_initialize_interpreter = train_intent_and_initialize_interpreter(data_path=path, remove_caps=remove_caps, model_name=model_name,
                                                                                                  upstream_tasks=[status_train_ner, BaaS_freshly_initialized])
 
@@ -64,7 +64,7 @@ def make_flow(model_name=cfg.default_model_name,
             final_status = run_chatbot(model_name=model_name,
                                        add_conv_detail=add_conv_detail,
                                        response_delay=response_delay,
-                                       cuda=cuda,
+                                       cuda=not cpu,
                                        upstream_tasks=[final_training_task])
         else:
             final_status = final_training_task

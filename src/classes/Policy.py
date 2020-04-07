@@ -65,7 +65,7 @@ class Policy:
             return self.get_reply_follow_up_intent_rejected()
         elif intent == IntentFollowUp.accept:
             return self.get_reply_follow_up_intent_accepted(latest_intent=conversation_history.get_latest_base_intent(), conversation_history=conversation_history,
-                                                            recognized_entities=conversation_history.get_latest_msg.recognized_entities)
+                                                            recognized_entities=conversation_history.get_latest_msg().recognized_entities)
         else:
             raise Exception('Received an unexpected follow up intent')
 
@@ -78,7 +78,7 @@ class Policy:
         else:
             raise Exception('Received an unexpected type of intent for seeking additional info.')
 
-        yield 'I apologize, but I am imperfect. I was unable to identify a required piece of information for me to help you out.'
+        yield 'I apologize. I am imperfect. I was unable to identify a required piece of information for me to help you out.'
         yield f'I believe you are trying to get information about {intent_descr}. '
 
         if not recognized_entities.is_empty():
