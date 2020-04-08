@@ -75,7 +75,6 @@ class StateBase(Enum):
     seeking_additional_info = auto()
     ready_to_process = auto()
     processing = auto()
-    selecting_results = auto()
     conversation_complete = auto()
 
 

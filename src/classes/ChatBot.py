@@ -63,7 +63,7 @@ class ChatBot:
             self.currently_missing_entities = self.interpreter.get_missing_entities(classified_intent, self.currently_recognized_entities)
         else:
             latent_vector = self.interpreter.preprocess_input_single(sentence=raw_text, use_entity_features=False)
-            self.currently_recognized_entities = RecognizedEntities()
+            self.currently_recognized_entities = self.conversation_history.get_latest_msg().recognized_entities
             classified_intent = IntentFollowUp.factory(self.interpreter.get_intent_follow_up(sentence=raw_text))
             if classified_intent == IntentFollowUp.accept:  # Use entire raw text as missing entity TODO: Clean up to extract just the piece we want?
                 self.currently_recognized_entities.add(self.currently_missing_entities.get_missing_entity(), raw_text)
@@ -120,7 +120,7 @@ class ChatBot:
             self.conversation_history.add_bot_msg(reply)
             print(reply)
         self.policy.visualizer.task = None
-        self.state = StateBase.selecting_results
+        self.state = StateBase.base
         return
 
     @staticmethod

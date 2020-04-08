@@ -27,8 +27,6 @@ class Policy:
 
         if state == StateBase.processing:
             return self.get_reply_processing()
-        elif state == StateBase.selecting_results:
-            raise NotImplementedError
         elif state == StateBase.seeking_additional_info:
             reply = self.get_reply_seeking_additional_info(intent, recognized_entities, missing_entities)
         elif isinstance(intent, IntentBase):
@@ -82,7 +80,7 @@ class Policy:
         yield f'I believe you are trying to get information about {intent_descr}. '
 
         if not recognized_entities.is_empty():
-            yield f'I was able to identify you are looking for the following: {recognized_entities}. '
+            yield f'I was able to identify you are looking for the following - {recognized_entities}. '
 
         if missing_entities.size > 1:
             yield f'I need more than one more piece of information. I am going to attempt to get the remaining information from you one piece at a time. '
@@ -136,8 +134,7 @@ class Policy:
         return
 
     def get_reply_follow_up_intent_accepted(self, latest_intent, conversation_history, recognized_entities):
-        yield self.get_reply_base_intent(latest_intent, conversation_history, recognized_entities)
-        return
+        return self.get_reply_base_intent(latest_intent, conversation_history, recognized_entities)
 
     @staticmethod
     def preprocess_small_talk_personality(small_talk_personality):

@@ -57,7 +57,7 @@ def SIO(chatbot, address):
         for reply in visualizer.get_reply(intent=latest_intent):
             sio.emit('bot message', reply)
         SIO.chatbot.policy.visualizer.task = None
-        SIO.chatbot.state = StateBase.selecting_results
+        SIO.chatbot.state = StateBase.base
         return
 
     # Execute
